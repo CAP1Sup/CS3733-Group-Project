@@ -1,8 +1,8 @@
 {
-  "name": "create-venue",
+  "name": "backend",
   "version": "1.0.0",
-  "description": "Creates a new venue",
-  "main": "app.js",
+  "description": "Backend Lambda functions for the BigTicket app",
+  "main": "create-venue.ts",
   "scripts": {
     "unit": "jest",
     "lint": "eslint '*.ts' --quiet --fix",

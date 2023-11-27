@@ -23,7 +23,7 @@ npm install
 New-Item -ItemType File -Path ".env"
 
 # Add the API Gateway endpoint to the .env file
-"`nVUE_APP_API_ENDPOINT=$api_gateway_endpoint" | Out-File -Append ".env"
+"`nAPP_API_ENDPOINT=$api_gateway_endpoint" | Out-File -Append ".env"
 
 # Confirm that the endpoint has been added to the .env file
 Write-Host "The API Gateway endpoint has been added to the .env file:"
