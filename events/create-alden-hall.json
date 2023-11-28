@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"email\":\"manager@gmail.com\",\"passwd\":\"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5\",\"name\":\"Alden Hall\",\"sections\":[{\"name\":\"Left section\",\"columns\":3,\"rows\":4},{\"name\":\"Center section\",\"columns\":5,\"rows\":5},{\"name\":\"Right section\",\"columns\":4,\"rows\":3}]}"
+}
