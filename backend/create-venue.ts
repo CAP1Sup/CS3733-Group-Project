@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import mysql, { RowDataPacket } from "mysql2";
-import { dbConfig } from "./db-access.ts";
+import { addUser, createPool, getUser } from "./db-func.ts";
 
 /**
  *
@@ -94,64 +94,24 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
     }
 
-    // Get credentials from the dbAccess layer (loaded separately via AWS console)
-    const pool = mysql.createPool({
-        host: dbConfig.host,
-        user: dbConfig.user,
-        password: dbConfig.passwd,
-        database: dbConfig.database,
-    });
-
-    // Get the user's ID from the database
-    function getUserID(email: string, passwd: string) {
-        return new Promise<string>((resolve, reject) => {
-            pool.query("SELECT ID FROM users WHERE email=? AND passwd=?", [email, passwd], (error, rows) => {
-                if (error) {
-                    return reject(error);
-                }
-                // TODO: Check if the row is an array of type RowDataPacket
-                if (rows && rows.length == 1) {
-                    return resolve(rows[0].ID);
-                } else {
-                    // No user found, create one
-                    pool.query("INSERT into users(email, passwd) VALUES(?,?)", [email, passwd], (error, rows) => {
-                        if (error) {
-                            return reject(error);
-                        }
-                        // TODO: Check if the row is an array of type RowDataPacket
-                        if (rows && rows.affectedRows == 1) {
-                            pool.query(
-                                "SELECT ID FROM users WHERE email=? AND passwd=?",
-                                [email, passwd],
-                                (error, rows) => {
-                                    if (error) {
-                                        return reject(error);
-                                    }
-                                    // TODO: Check if the row is an array of type RowDataPacket
-                                    if (rows && rows.length == 1) {
-                                        return resolve(rows[0].ID);
-                                    } else {
-                                        return reject("Unable to get added user");
-                                    }
-                                }
-                            );
-                        } else {
-                            return reject("Unable to add user");
-                        }
-                    });
-                }
-            });
-        });
-    }
-
     const createVenue = (request: CreateVenueRequest) => {
         return new Promise<string>(async (resolve, reject) => {
             // Get the user's ID
-            const userID = await getUserID(request.email, request.passwd);
-            if (!userID) {
-                return reject("Unable to get user ID");
+            let userID = undefined;
+            try {
+                userID = await getUser(request.email, request.passwd);
+            } catch (error) {
+                if (error === "No users found") {
+                    try {
+                        userID = addUser(request.email, request.passwd);
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
             }
 
+            const pool = createPool();
+            // Create the venue in the database
             pool.query(
                 "INSERT into venues(name, userID, section1Name, section1Rows, section1Cols, section2Name, section2Rows, section2Cols, section3Name, section3Rows, section3Cols) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
                 [
@@ -168,35 +128,37 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                     request.sections[2].columns,
                 ],
                 (error, rows) => {
+                    pool.end();
                     if (error) {
-                        return reject(error);
+                        if (error.code == "ER_DUP_ENTRY") {
+                            return reject("Venue already exists");
+                        }
+                        return reject("DB error: " + error);
                     }
-                    if (rows && rows.affectedRows == 1) {
-                        return resolve("Successfully created venue");
-                    } else {
-                        return resolve("Error creating venue entry in database");
+                    if (!rows) {
+                        return reject("No rows updated when adding venue");
                     }
+                    rows = rows as mysql.ResultSetHeader;
+                    if (rows.affectedRows == 1) {
+                        return resolve("Venue added");
+                    }
+                    return reject("No rows updated when adding venue");
                 }
             );
         });
     };
 
-    let response = undefined;
-
     // Attempt to create the venue
-    const status = await createVenue(request);
-    if (status === "Successfully created venue") {
-        response = {
+    try {
+        const status = await createVenue(request);
+        return {
             statusCode: 200,
             body: "Successfully created venue",
         };
-    } else {
-        response = {
+    } catch (error) {
+        return {
             statusCode: 400,
-            body: status,
+            body: error as string,
         };
     }
-
-    pool.end(); // done with DB
-    return response;
 };
