@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ResultSetHeader } from "mysql2";
-import { createPool, getUser } from "./libs/db-query";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { createPool, deleteSections, getUser } from "./libs/db-query";
 import { throwError } from "./libs/html";
 import { getUserVenueJSON } from "./libs/db-conv";
 
@@ -40,7 +40,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     // Check if the user exists
     let userID: number;
     try {
-        userID = parseInt(await getUser(request.email, request.passwd));
+        userID = await getUser(request.email, request.passwd);
     } catch (error) {
         return throwError(error as string);
     }
@@ -48,10 +48,12 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     // Attempt to delete the venues that match the name and userID
     // Attempt to create the venue
     try {
-        await deleteVenue(request.venue, userID);
+        const deletedVenues = await deleteVenue(request.venue, userID);
+        await deleteSections(deletedVenues[0].ID);
+        // TODO: Delete all data that matches the venue ID (such as the shows and their blocks and seats)
         return {
             statusCode: 200,
-            body: await getUserVenueJSON(request.email, request.passwd),
+            body: (await getUserVenueJSON(request.email, request.passwd)) as string,
         };
     } catch (error) {
         return throwError(error as string);
@@ -59,22 +61,37 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 };
 
 async function deleteVenue(venue: string, userID: number) {
-    return new Promise<string>((resolve, reject) => {
+    return new Promise<RowDataPacket[]>((resolve, reject) => {
         const pool = createPool();
-        pool.query("DELETE FROM venues WHERE name=? AND userID=?", [venue, userID], (error, rows) => {
+        let venuesToDelete: RowDataPacket[];
+        pool.execute("SELECT * FROM venues WHERE name=? AND userID=?", [venue, userID], (error, rows) => {
+            // Close the connection, prevents issues with too many connections
+            if (error) {
+                pool.end();
+                return reject("Database error deleting venue: " + error);
+            }
+            if (!rows) {
+                pool.end();
+                return reject("You're not authorized to make modifications to that venue");
+            }
+            venuesToDelete = rows as RowDataPacket[];
+        });
+        pool.execute("DELETE FROM venues WHERE name=? AND userID=?", [venue, userID], (error, result) => {
             // Close the connection, prevents issues with too many connections
             pool.end();
             if (error) {
-                return reject("Database error deleting venue");
+                return reject("Database error deleting venue: " + error);
             }
-            if (!rows) {
-                return reject("No venues found");
+
+            // Process the result
+            result = result as ResultSetHeader;
+            if (!result) {
+                return reject("You're not authorized to make modifications to that venue");
             }
-            rows = rows as ResultSetHeader;
-            if (rows.affectedRows == 1) {
-                return resolve("Venue deleted");
+            if (result.affectedRows > 0) {
+                return resolve(venuesToDelete);
             }
-            return reject("No venues found");
+            return reject("You're not authorized to make modifications to that venue");
         });
     });
 }

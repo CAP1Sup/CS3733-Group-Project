@@ -41,25 +41,28 @@ export function dbToShow(rows: RowDataPacket[]) {
     return shows;
 }
 
-// TODO: Test this function
 export async function getUserVenueJSON(email: string, passwd: string) {
     // Pull all of the data from the DB
-    const userID = await getUser(email, passwd);
-    const venues = dbToVenue(await getVenues(parseInt(userID)));
-    for (let i = 0; i < venues.length; i++) {
-        if (venues[i].id != null) {
-            venues[i].shows = dbToShow(await getShows(venues[i].id));
+    try {
+        const userID = await getUser(email, passwd);
+        const venues = dbToVenue(await getVenues(userID));
+        for (let i = 0; i < venues.length; i++) {
+            if (venues[i].id != null) {
+                venues[i].shows = dbToShow(await getShows(venues[i].id));
+            }
         }
-    }
 
-    // Remove the unneeded data from the JSON
-    for (let i = 0; i < venues.length; i++) {
-        delete venues[i].id;
-        for (let j = 0; j < venues[i].shows.length; j++) {
-            delete venues[i].shows[j].id;
+        // Remove the unneeded data from the JSON
+        for (let i = 0; i < venues.length; i++) {
+            delete venues[i].id;
+            for (let j = 0; j < venues[i].shows.length; j++) {
+                delete venues[i].shows[j].id;
+            }
         }
+        return JSON.stringify(venues);
+    } catch (error) {
+        return error;
     }
-    return JSON.stringify(venues);
 }
 
 /*

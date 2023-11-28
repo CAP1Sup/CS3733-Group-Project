@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import mysql, { RowDataPacket } from "mysql2";
-import { addUser, createPool, getShows, getUser, getVenues } from "./libs/db-query.ts";
+import { createUser, createPool, getShows, getUser, getVenues, createSection } from "./libs/db-query.ts";
 import { getUserVenueJSON } from "./libs/db-conv.ts";
 import { throwError } from "./libs/html.ts";
 
@@ -58,11 +58,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return throwError("Password must be at least 8 characters");
     }
 
-    // Check to make sure that the sections and valid
-    if (request.sections.length != 3) {
-        return throwError("There must be 3 sections");
-    }
-
     // Check to make sure that the section names are unique
     const sectionNames = new Set<string>();
     for (let i = 0; i < request.sections.length; i++) {
@@ -85,15 +80,15 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     const createVenue = (request: CreateVenueRequest) => {
-        return new Promise<string>(async (resolve, reject) => {
+        return new Promise<number>(async (resolve, reject) => {
             // Get the user's ID
-            let userID = undefined;
+            let userID: number = -1;
             try {
                 userID = await getUser(request.email, request.passwd);
             } catch (error) {
                 if (error === "No users found") {
                     try {
-                        userID = addUser(request.email, request.passwd);
+                        userID = await createUser(request.email, request.passwd);
                     } catch (error) {
                         reject(error);
                     }
@@ -102,48 +97,40 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
             const pool = createPool();
             // Create the venue in the database
-            pool.query(
-                "INSERT into venues(name, userID, section1Name, section1Rows, section1Cols, section2Name, section2Rows, section2Cols, section3Name, section3Rows, section3Cols) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
-                [
-                    request.name,
-                    userID,
-                    request.sections[0].name,
-                    request.sections[0].rows,
-                    request.sections[0].columns,
-                    request.sections[1].name,
-                    request.sections[1].rows,
-                    request.sections[1].columns,
-                    request.sections[2].name,
-                    request.sections[2].rows,
-                    request.sections[2].columns,
-                ],
-                (error, rows) => {
-                    pool.end();
-                    if (error) {
-                        if (error.code == "ER_DUP_ENTRY") {
-                            return reject("The given venue already exists");
-                        }
-                        return reject("DB error: " + error);
+            pool.execute("INSERT INTO venues(name, userID) VALUES(?,?)", [request.name, userID], (error, result) => {
+                pool.end();
+                if (error) {
+                    if (error.code == "ER_DUP_ENTRY") {
+                        return reject("The given venue already exists");
                     }
-                    if (!rows) {
-                        return reject("No rows updated when adding venue");
-                    }
-                    rows = rows as mysql.ResultSetHeader;
-                    if (rows.affectedRows == 1) {
-                        return resolve("Venue added");
-                    }
+                    return reject("DB error: " + error);
+                }
+                if (!result) {
                     return reject("No rows updated when adding venue");
                 }
-            );
+                result = result as mysql.ResultSetHeader;
+                if (result.affectedRows == 1) {
+                    return resolve(result.insertId);
+                }
+                return reject("No rows updated when adding venue");
+            });
         });
     };
 
     // Attempt to create the venue
     try {
-        await createVenue(request);
+        const venueID = await createVenue(request);
+        for (let i = 0; i < request.sections.length; i++) {
+            await createSection(
+                venueID,
+                request.sections[i].name,
+                request.sections[i].rows,
+                request.sections[i].columns
+            );
+        }
         return {
             statusCode: 200,
-            body: await getUserVenueJSON(request.email, request.passwd),
+            body: (await getUserVenueJSON(request.email, request.passwd)) as string,
         };
     } catch (error) {
         return throwError(error as string);
