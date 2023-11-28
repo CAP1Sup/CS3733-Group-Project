@@ -1,4 +1,4 @@
-import mysql, { QueryError, RowDataPacket } from "mysql2";
+import mysql, { ResultSetHeader, RowDataPacket } from "mysql2";
 import { dbConfig } from "./db-access.ts";
 
 export function createPool() {
@@ -22,7 +22,7 @@ export async function getUser(email: string, passwd: string) {
             if (!rows) {
                 return reject("No users found");
             }
-            rows = rows as mysql.RowDataPacket[];
+            rows = rows as RowDataPacket[];
             return resolve(rows[0].ID);
         });
     });
@@ -35,12 +35,15 @@ export async function addUser(email: string, passwd: string) {
             // Close the connection, prevents issues with too many connections
             pool.end();
             if (error) {
+                if (error.code == "ER_DUP_ENTRY") {
+                    return reject("The given user already exists, password is incorrect");
+                }
                 return reject("Database error:" + error);
             }
             if (!rows) {
                 return reject("No rows updated when adding user");
             }
-            rows = rows as mysql.ResultSetHeader;
+            rows = rows as ResultSetHeader;
             if (rows.affectedRows == 1) {
                 return resolve("User added");
             }
@@ -49,8 +52,8 @@ export async function addUser(email: string, passwd: string) {
     });
 }
 
-export async function getVenues(userID: string) {
-    return new Promise<mysql.RowDataPacket[]>((resolve, reject) => {
+export async function getVenues(userID: number) {
+    return new Promise<RowDataPacket[]>((resolve, reject) => {
         const pool = createPool();
         pool.query("SELECT * FROM venues WHERE userID=?", [userID], (error, rows) => {
             // Close the connection, prevents issues with too many connections
@@ -61,7 +64,24 @@ export async function getVenues(userID: string) {
             if (!rows) {
                 return reject("No venues found");
             }
-            return resolve(rows as mysql.RowDataPacket[]);
+            return resolve(rows as RowDataPacket[]);
+        });
+    });
+}
+
+export async function getShows(venueID: number) {
+    return new Promise<RowDataPacket[]>((resolve, reject) => {
+        const pool = createPool();
+        pool.query("SELECT * FROM shows WHERE venueID=?", [venueID], (error, rows) => {
+            // Close the connection, prevents issues with too many connections
+            pool.end();
+            if (error) {
+                return reject(error);
+            }
+            if (!rows) {
+                return reject("No shows found for given venue");
+            }
+            return resolve(rows as RowDataPacket[]);
         });
     });
 }

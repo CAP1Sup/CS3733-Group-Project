@@ -1,6 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import mysql, { RowDataPacket } from "mysql2";
-import { addUser, createPool, getUser } from "./db-func.ts";
+import { addUser, createPool, getShows, getUser, getVenues } from "./libs/db-query.ts";
+import { getUserVenueJSON } from "./libs/db-conv.ts";
+import { throwError } from "./libs/html.ts";
 
 /**
  *
@@ -27,10 +29,7 @@ interface CreateVenueRequest {
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     // Make sure that the request is a POST request
     if (event.httpMethod != "POST") {
-        return {
-            statusCode: 400,
-            body: "Invalid request, must be a POST request",
-        };
+        return throwError("Invalid request, must be a POST request");
     }
 
     // Make sure that the request isn't empty
@@ -46,51 +45,42 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
     // Check to make sure that all values are present
     if (!request.name || !request.email || !request.passwd || !request.sections) {
-        return {
-            statusCode: 400,
-            body: "Malformed request, missing parameters",
-        };
+        return throwError("Malformed request, missing parameters");
     }
 
     // Check to make sure the email is valid (basically just check for @)
     if (!request.email.includes("@")) {
-        return {
-            statusCode: 400,
-            body: "Not a valid email",
-        };
+        return throwError("Not a valid email");
     }
 
     // Check to make sure the password is valid (at least 8 characters)
     if (request.passwd.length < 8) {
-        return {
-            statusCode: 400,
-            body: "Password must be at least 8 characters",
-        };
+        return throwError("Password must be at least 8 characters");
     }
 
     // Check to make sure that the sections and valid
     if (request.sections.length != 3) {
-        return {
-            statusCode: 400,
-            body: "There must be 3 sections",
-        };
+        return throwError("There must be 3 sections");
+    }
+
+    // Check to make sure that the section names are unique
+    const sectionNames = new Set<string>();
+    for (let i = 0; i < request.sections.length; i++) {
+        if (sectionNames.has(request.sections[i].name)) {
+            return throwError("Duplicate section names are not allowed");
+        }
+        sectionNames.add(request.sections[i].name);
     }
 
     // Check to make sure that each of the sections has a valid name and sizing
     for (let i = 0; i < request.sections.length; i++) {
         if (!request.sections[i].name || !request.sections[i].rows || !request.sections[i].columns) {
-            return {
-                statusCode: 400,
-                body: "Malformed request, missing parameter in section " + (i + 1),
-            };
+            return throwError("Malformed request, missing parameter in section " + (i + 1));
         }
 
         // Check that the rows and columns are valid
         if (request.sections[i].rows < 1 || request.sections[i].columns < 1) {
-            return {
-                statusCode: 400,
-                body: "Rows and columns must be positive",
-            };
+            return throwError("Invalid rows or columns in section " + (i + 1));
         }
     }
 
@@ -131,7 +121,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
                     pool.end();
                     if (error) {
                         if (error.code == "ER_DUP_ENTRY") {
-                            return reject("Venue already exists");
+                            return reject("The given venue already exists");
                         }
                         return reject("DB error: " + error);
                     }
@@ -150,15 +140,12 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
     // Attempt to create the venue
     try {
-        const status = await createVenue(request);
+        await createVenue(request);
         return {
             statusCode: 200,
-            body: "Successfully created venue",
+            body: await getUserVenueJSON(request.email, request.passwd),
         };
     } catch (error) {
-        return {
-            statusCode: 400,
-            body: error as string,
-        };
+        return throwError(error as string);
     }
 };

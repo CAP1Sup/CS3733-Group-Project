@@ -1,160 +1,194 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Our CS3733 Group Project: BigTicket
+    Our CS3733 Group Project: BigTicket
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
-  Function:
-    Timeout: 3
+    Function:
+        Timeout: 3
 
 Resources:
-  # API
-  API:
-    Type: AWS::Serverless::Api
-    Properties:
-      Name: "BigTicketAPI"
-      StageName: "prod"
-      Cors:
-        AllowMethods: "'OPTIONS, POST, GET'"
-        AllowHeaders: "'Content-Type'"
-        AllowOrigin: "'*'" #DO NOT USE THIS VALUE IN PRODUCTION - https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html
+    # API
+    API:
+        Type: AWS::Serverless::Api
+        Properties:
+            Name: "BigTicketAPI"
+            StageName: "prod"
+            Cors:
+                AllowMethods: "'OPTIONS, POST, GET'"
+                AllowHeaders: "'Content-Type'"
+                AllowOrigin: "'*'" #DO NOT USE THIS VALUE IN PRODUCTION - https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-cors.html
 
-  # Lambdas
-  CreateVenue:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
-    Properties:
-      FunctionName: "Create-Venue"
-      CodeUri: backend/
-      Handler: create-venue.lambdaHandler
-      Runtime: nodejs20.x
-      Architectures:
-        - x86_64
-      Role: arn:aws:iam::514083196121:role/ExecuteCode
-      VpcConfig:
-        SecurityGroupIds:
-          - sg-065e0b8d755a33fa7
-        SubnetIds:
-          - subnet-02d357301c4fc629b
-          - subnet-054357d0c8c455bf9
-          - subnet-00d51aa75d59a4f91
-      Events:
-        CreateVenue:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /create-venue
-            Method: POST
-            RestApiId:
-              Ref: API
-    Metadata: # Manage esbuild properties
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: "es2020"
-        Sourcemap: true
-        EntryPoints:
-          - create-venue.ts
+    # Lambdas
+    CreateVenue:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            FunctionName: "Create-Venue"
+            CodeUri: backend/
+            Handler: create-venue.lambdaHandler
+            Runtime: nodejs20.x
+            Architectures:
+                - x86_64
+            Role: arn:aws:iam::514083196121:role/ExecuteCode
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-065e0b8d755a33fa7
+                SubnetIds:
+                    - subnet-02d357301c4fc629b
+                    - subnet-054357d0c8c455bf9
+                    - subnet-00d51aa75d59a4f91
+            Events:
+                CreateVenue:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /create-venue
+                        Method: POST
+                        RestApiId:
+                            Ref: API
+        Metadata: # Manage esbuild properties
+            BuildMethod: esbuild
+            BuildProperties:
+                Minify: true
+                Target: "es2020"
+                Sourcemap: true
+                EntryPoints:
+                    - create-venue.ts
 
-  # S3 Bucket to host single page app website
-  WebSiteBucket:
-    Type: "AWS::S3::Bucket"
-    Properties:
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - BucketKeyEnabled: true
-      VersioningConfiguration:
-        Status: Enabled
-  WebSiteBucketPolicy:
-    Type: "AWS::S3::BucketPolicy"
-    Properties:
-      Bucket: !Ref WebSiteBucket
-      PolicyDocument:
-        Version: "2012-10-17"
-        Id: "PolicyForCloudFrontPrivateContent"
-        Statement:
-          - Sid: "AllowCloudFrontServicePrincipal"
-            Effect: "Allow"
-            Principal:
-              Service: "cloudfront.amazonaws.com"
-            Action: "s3:GetObject"
-            Resource: !Join ["", ["arn:aws:s3:::", !Ref WebSiteBucket, "/*"]]
-            Condition:
-              StringEquals:
-                "AWS:SourceArn":
-                  !Join [
-                    "",
-                    [
-                      "arn:aws:cloudfront::",
-                      !Ref "AWS::AccountId",
-                      ":distribution/",
-                      !Ref CloudFrontDistribution,
-                    ],
-                  ]
+    DeleteVenue:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            FunctionName: "Delete-Venue"
+            CodeUri: backend/
+            Handler: delete-venue.lambdaHandler
+            Runtime: nodejs20.x
+            Architectures:
+                - x86_64
+            Role: arn:aws:iam::514083196121:role/ExecuteCode
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-065e0b8d755a33fa7
+                SubnetIds:
+                    - subnet-02d357301c4fc629b
+                    - subnet-054357d0c8c455bf9
+                    - subnet-00d51aa75d59a4f91
+            Events:
+                CreateVenue:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /delete-venue
+                        Method: POST
+                        RestApiId:
+                            Ref: API
+        Metadata: # Manage esbuild properties
+            BuildMethod: esbuild
+            BuildProperties:
+                Minify: true
+                Target: "es2020"
+                Sourcemap: true
+                EntryPoints:
+                    - delete-venue.ts
 
-  # CloudFront Distribution for hosting the single page app website
-  CloudFrontDistribution:
-    Type: "AWS::CloudFront::Distribution"
-    Properties:
-      DistributionConfig:
-        Origins:
-          - DomainName: !GetAtt WebSiteBucket.RegionalDomainName
-            Id: "myS3Origin"
-            OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
-            S3OriginConfig:
-              OriginAccessIdentity: ""
-        Enabled: true
-        DefaultRootObject: "index.html"
-        HttpVersion: "http2"
-        DefaultCacheBehavior:
-          AllowedMethods:
-            - "DELETE"
-            - "GET"
-            - "HEAD"
-            - "OPTIONS"
-            - "PATCH"
-            - "POST"
-            - "PUT"
-          CachedMethods:
-            - "GET"
-            - "HEAD"
-          TargetOriginId: "myS3Origin"
-          ForwardedValues:
-            QueryString: false
-            Cookies:
-              Forward: "none"
-          ViewerProtocolPolicy: "allow-all"
-          MinTTL: 0
-          DefaultTTL: 3600
-          MaxTTL: 86400
-        PriceClass: "PriceClass_200"
-        Restrictions:
-          GeoRestriction:
-            RestrictionType: "whitelist"
-            Locations:
-              - "US"
-              - "CA"
-              - "GB"
-              - "DE"
-        ViewerCertificate:
-          CloudFrontDefaultCertificate: true
-  CloudFrontOriginAccessControl:
-    Type: "AWS::CloudFront::OriginAccessControl"
-    Properties:
-      OriginAccessControlConfig:
-        Name: !Sub "${WebSiteBucket} OAC"
-        OriginAccessControlOriginType: "s3"
-        SigningBehavior: "always"
-        SigningProtocol: "sigv4"
+    # S3 Bucket to host single page app website
+    WebSiteBucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketEncryption:
+                ServerSideEncryptionConfiguration:
+                    - BucketKeyEnabled: true
+            VersioningConfiguration:
+                Status: Enabled
+    WebSiteBucketPolicy:
+        Type: "AWS::S3::BucketPolicy"
+        Properties:
+            Bucket: !Ref WebSiteBucket
+            PolicyDocument:
+                Version: "2012-10-17"
+                Id: "PolicyForCloudFrontPrivateContent"
+                Statement:
+                    - Sid: "AllowCloudFrontServicePrincipal"
+                      Effect: "Allow"
+                      Principal:
+                          Service: "cloudfront.amazonaws.com"
+                      Action: "s3:GetObject"
+                      Resource: !Join ["", ["arn:aws:s3:::", !Ref WebSiteBucket, "/*"]]
+                      Condition:
+                          StringEquals:
+                              "AWS:SourceArn":
+                                  !Join [
+                                      "",
+                                      [
+                                          "arn:aws:cloudfront::",
+                                          !Ref "AWS::AccountId",
+                                          ":distribution/",
+                                          !Ref CloudFrontDistribution,
+                                      ],
+                                  ]
+
+    # CloudFront Distribution for hosting the single page app website
+    CloudFrontDistribution:
+        Type: "AWS::CloudFront::Distribution"
+        Properties:
+            DistributionConfig:
+                Origins:
+                    - DomainName: !GetAtt WebSiteBucket.RegionalDomainName
+                      Id: "myS3Origin"
+                      OriginAccessControlId: !GetAtt CloudFrontOriginAccessControl.Id
+                      S3OriginConfig:
+                          OriginAccessIdentity: ""
+                Enabled: true
+                DefaultRootObject: "index.html"
+                HttpVersion: "http2"
+                DefaultCacheBehavior:
+                    AllowedMethods:
+                        - "DELETE"
+                        - "GET"
+                        - "HEAD"
+                        - "OPTIONS"
+                        - "PATCH"
+                        - "POST"
+                        - "PUT"
+                    CachedMethods:
+                        - "GET"
+                        - "HEAD"
+                    TargetOriginId: "myS3Origin"
+                    ForwardedValues:
+                        QueryString: false
+                        Cookies:
+                            Forward: "none"
+                    ViewerProtocolPolicy: "allow-all"
+                    MinTTL: 0
+                    DefaultTTL: 3600
+                    MaxTTL: 86400
+                PriceClass: "PriceClass_200"
+                Restrictions:
+                    GeoRestriction:
+                        RestrictionType: "whitelist"
+                        Locations:
+                            - "US"
+                            - "CA"
+                            - "GB"
+                            - "DE"
+                ViewerCertificate:
+                    CloudFrontDefaultCertificate: true
+    CloudFrontOriginAccessControl:
+        Type: "AWS::CloudFront::OriginAccessControl"
+        Properties:
+            OriginAccessControlConfig:
+                Name: !Sub "${WebSiteBucket} OAC"
+                OriginAccessControlOriginType: "s3"
+                SigningBehavior: "always"
+                SigningProtocol: "sigv4"
 Outputs:
-  APIGatewayEndpoint:
-    Description: "API Gateway endpoint URL for prod stage"
-    Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod/"
-  CloudFrontDistributionId:
-    Description: "CloudFront Distribution ID for hosting web front end"
-    Value: !Ref CloudFrontDistribution
-  CloudFrontDistributionDomainName:
-    Description: "CloudFront Distribution Domain Name for accessing web front end"
-    Value: !GetAtt CloudFrontDistribution.DomainName
-  WebS3BucketName:
-    Description: "S3 Bucket for hosting web frontend"
-    Value: !Ref WebSiteBucket
+    APIGatewayEndpoint:
+        Description: "API Gateway endpoint URL for prod stage"
+        Value: !Sub "https://${API}.execute-api.${AWS::Region}.amazonaws.com/prod/"
+    CloudFrontDistributionId:
+        Description: "CloudFront Distribution ID for hosting web front end"
+        Value: !Ref CloudFrontDistribution
+    CloudFrontDistributionDomainName:
+        Description: "CloudFront Distribution Domain Name for accessing web front end"
+        Value: !GetAtt CloudFrontDistribution.DomainName
+    WebS3BucketName:
+        Description: "S3 Bucket for hosting web frontend"
+        Value: !Ref WebSiteBucket
