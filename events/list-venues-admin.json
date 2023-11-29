@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"email\":\"admin@gmail.com\",\"passwd\":\"e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d\"}"
+}
