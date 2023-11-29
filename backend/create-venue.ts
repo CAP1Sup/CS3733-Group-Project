@@ -1,8 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import mysql, { RowDataPacket } from "mysql2";
-import { createUser, createPool, getShows, getUser, getVenues, createSection } from "./libs/db-query.ts";
+import { createUser, createPool, getShows, getUser, getVenues, createSection, createVenue } from "./libs/db-query.ts";
 import { getUserVenueJSON } from "./libs/db-conv.ts";
 import { throwError } from "./libs/html.ts";
+import { Section, User } from "./libs/db-types.ts";
 
 /**
  *
@@ -13,11 +14,6 @@ import { throwError } from "./libs/html.ts";
  * @returns {Object} object - API Gateway Lambda Proxy Output Format
  *
  */
-interface Section {
-    name: string;
-    rows: number;
-    columns: number;
-}
 
 interface CreateVenueRequest {
     name: string;
@@ -79,58 +75,30 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
     }
 
-    const createVenue = (request: CreateVenueRequest) => {
-        return new Promise<number>(async (resolve, reject) => {
-            // Get the user's ID
-            let userID: number = -1;
+    // Get the user's ID
+    let user: User;
+    try {
+        user = await getUser(request.email, request.passwd);
+    } catch (error) {
+        if (error === "User doesn't exist") {
             try {
-                userID = await getUser(request.email, request.passwd);
+                user = await createUser(request.email, request.passwd, false);
             } catch (error) {
-                if (error === "No users found") {
-                    try {
-                        userID = await createUser(request.email, request.passwd);
-                    } catch (error) {
-                        reject(error);
-                    }
-                }
+                return throwError(error as string);
             }
-
-            const pool = createPool();
-            // Create the venue in the database
-            pool.execute("INSERT INTO venues(name, userID) VALUES(?,?)", [request.name, userID], (error, result) => {
-                pool.end();
-                if (error) {
-                    if (error.code == "ER_DUP_ENTRY") {
-                        return reject("The given venue already exists");
-                    }
-                    return reject("DB error: " + error);
-                }
-                if (!result) {
-                    return reject("No rows updated when adding venue");
-                }
-                result = result as mysql.ResultSetHeader;
-                if (result.affectedRows == 1) {
-                    return resolve(result.insertId);
-                }
-                return reject("No rows updated when adding venue");
-            });
-        });
-    };
+        }
+        return throwError(error as string);
+    }
 
     // Attempt to create the venue
     try {
-        const venueID = await createVenue(request);
+        const venue = await createVenue(request.name, user);
         for (let i = 0; i < request.sections.length; i++) {
-            await createSection(
-                venueID,
-                request.sections[i].name,
-                request.sections[i].rows,
-                request.sections[i].columns
-            );
+            await createSection(venue, request.sections[i].name, request.sections[i].rows, request.sections[i].columns);
         }
         return {
             statusCode: 200,
-            body: (await getUserVenueJSON(request.email, request.passwd)) as string,
+            body: (await getUserVenueJSON(user)) as string,
         };
     } catch (error) {
         return throwError(error as string);
