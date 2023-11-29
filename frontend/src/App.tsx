@@ -1,35 +1,45 @@
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
-import './App.css'
+import '../App.css'
 
-function App() {
+function login_page() {
   const [count, setCount] = useState(0)
 
+  const verifyUser = (event: { preventDefault: () => void }) => {
+    //TODO: check that username and password exists within database, and bring to correct view depending on Venue Manager, Administrator, Consumer
+    //if user does not exist, throw error
+    event.preventDefault();
+    console.log("Error: user verification has not yet been implemented.")
+    window.location.href = '/venue_view.tsx'
+  }
+
+  const viewShow = () => {
+    //TODO: make page link to the list shows (consumer) page
+    window.location.href = ""
+  }
+
+
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
+      <>
+        <div>
+            <h1>Login Page!</h1>
+          <button onClick={(e)=>console.log("hello")}>I am a consumer</button>
+        </div>
+        <form onSubmit={verifyUser}>
         <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+          Username: <input type="text" name="Username" id="Username" required></input>
         </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+        <p>
+          Password: <input type="password" name="pwd" id="pwd" required></input>
+        </p>
+          <input type="submit" value="Log in"/>
+        </form>
+        <p className="read-the-docs">
+          TODO: implement verifyUser, viewShow.
+        </p>
+      </>
+    )
 }
 
-export default App
+export default login_page

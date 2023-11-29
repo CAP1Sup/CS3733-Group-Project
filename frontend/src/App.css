@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+.vm-shows {
+  display: flex;
+}
+.vm-shows > div {
+  width:25%;
+}
