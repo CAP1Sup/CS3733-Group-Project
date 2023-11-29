@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import mysql, { RowDataPacket } from "mysql2";
 import { createUser, createPool, getShows, getUser, getVenues, createSection, createVenue } from "./libs/db-query.ts";
-import { getUserVenueJSON } from "./libs/db-conv.ts";
-import { throwError } from "./libs/html.ts";
+import { getVenuesJSON } from "./libs/db-conv.ts";
+import { throwError } from "./libs/htmlResponses.ts";
 import { Section, User } from "./libs/db-types.ts";
 
 /**
@@ -75,7 +75,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
     }
 
-    // Get the user's ID
+    // Get the user's information
     let user: User;
     try {
         user = await getUser(request.email, request.passwd);
@@ -98,7 +98,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
         return {
             statusCode: 200,
-            body: (await getUserVenueJSON(user)) as string,
+            body: await getVenuesJSON(user),
         };
     } catch (error) {
         return throwError(error as string);

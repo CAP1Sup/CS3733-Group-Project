@@ -8,7 +8,7 @@ export type Venue = {
     id?: number;
     name: string;
     sections?: Section[];
-    shows?: Show[];
+    shows: Show[];
 };
 
 export type Section = {
@@ -21,6 +21,7 @@ export type Section = {
 export type Show = {
     id?: number;
     name: string;
-    date: string;
+    date: Date;
+    defaultPrice?: number;
     active: boolean;
 };

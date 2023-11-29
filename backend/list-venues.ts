@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { throwError } from "./libs/html";
+import { throwError } from "./libs/htmlResponses";
 import { User } from "./libs/db-types";
 import { getUser } from "./libs/db-query";
-import { getUserVenueJSON } from "./libs/db-conv";
+import { getVenuesJSON } from "./libs/db-conv";
 
 interface ListVenuesRequest {
     email: string;
@@ -31,7 +31,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return throwError("Malformed request, missing parameters");
     }
 
-    // Check if the user exists
+    // Get the user's information
     let user: User;
     try {
         user = await getUser(request.email, request.passwd);
@@ -39,11 +39,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return throwError(error as string);
     }
 
-    // Attempt to delete the venues that match the name
+    // Return the user's venues
     try {
         return {
             statusCode: 200,
-            body: (await getUserVenueJSON(user)) as string,
+            body: await getVenuesJSON(user),
         };
     } catch (error) {
         return throwError(error as string);

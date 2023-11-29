@@ -123,6 +123,40 @@ Resources:
                 EntryPoints:
                     - list-venues.ts
 
+    CreateShow:
+        Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+        Properties:
+            FunctionName: "Create-Show"
+            CodeUri: backend/
+            Handler: create-show.lambdaHandler
+            Runtime: nodejs20.x
+            Architectures:
+                - x86_64
+            Role: arn:aws:iam::514083196121:role/ExecuteCode
+            VpcConfig:
+                SecurityGroupIds:
+                    - sg-065e0b8d755a33fa7
+                SubnetIds:
+                    - subnet-02d357301c4fc629b
+                    - subnet-054357d0c8c455bf9
+                    - subnet-00d51aa75d59a4f91
+            Events:
+                CreateVenue:
+                    Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+                    Properties:
+                        Path: /create-show
+                        Method: POST
+                        RestApiId:
+                            Ref: API
+        Metadata: # Manage esbuild properties
+            BuildMethod: esbuild
+            BuildProperties:
+                Minify: true
+                Target: "es2020"
+                Sourcemap: true
+                EntryPoints:
+                    - create-show.ts
+
     # S3 Bucket to host single page app website
     WebSiteBucket:
         Type: "AWS::S3::Bucket"

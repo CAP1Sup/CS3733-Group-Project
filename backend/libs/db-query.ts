@@ -42,6 +42,7 @@ export async function getUser(email: string, passwd: string) {
 export async function createUser(email: string, passwd: string, isAdmin: boolean) {
     return new Promise<User>((resolve, reject) => {
         const pool = createPool();
+        // No need to check if the user already exists, the DB will throw an error if the user's email matches another entry
         pool.execute(
             "INSERT INTO users(email, passwd, isAdmin) VALUES(?,?,?)",
             [email, passwd, isAdmin],
@@ -55,7 +56,7 @@ export async function createUser(email: string, passwd: string, isAdmin: boolean
                     return reject("Database error creating user:" + error);
                 }
                 if (!result) {
-                    return reject("No rows updated when adding user");
+                    return reject("No rows updated when creating user");
                 }
                 result = result as ResultSetHeader;
                 if (result.affectedRows == 1) {
@@ -66,7 +67,7 @@ export async function createUser(email: string, passwd: string, isAdmin: boolean
                         isAdmin: isAdmin,
                     });
                 }
-                return reject("No rows updated when adding user");
+                return reject("No rows updated when creating user");
             }
         );
     });
@@ -107,13 +108,13 @@ export async function createSection(venue: Venue, name: string, rows: number, co
                     return reject("Database error:" + error);
                 }
                 if (!result) {
-                    return reject("No rows updated when adding section");
+                    return reject("No rows updated when creating section");
                 }
                 result = result as ResultSetHeader;
                 if (result.affectedRows == 1) {
                     return resolve(result.insertId);
                 }
-                return reject("No rows updated when adding section");
+                return reject("No rows updated when creating section");
             }
         );
     });
@@ -189,9 +190,28 @@ export async function getVenues(user: User) {
     });
 }
 
+export async function venueExists(venueName: string) {
+    return new Promise<boolean>((resolve, reject) => {
+        const pool = createPool();
+        pool.execute("SELECT * FROM venues WHERE name=?", [venueName], (error, rows) => {
+            // Close the connection, prevents issues with too many connections
+            pool.end();
+            if (error) {
+                return reject(error);
+            }
+            if (!rows) {
+                return reject("Venue doesn't exist");
+            }
+            rows = rows as RowDataPacket[];
+            return resolve(true);
+        });
+    });
+}
+
 export async function createVenue(name: string, user: User) {
     return new Promise<Venue>(async (resolve, reject) => {
         const pool = createPool();
+        // No need to check if the venue already exists, the DB will throw an error if the venue's name matches another entry
         // Create the venue in the database
         pool.execute("INSERT INTO venues(name, userID) VALUES(?,?)", [name, user.id], (error, result) => {
             pool.end();
@@ -202,7 +222,7 @@ export async function createVenue(name: string, user: User) {
                 return reject("DB error: " + error);
             }
             if (!result) {
-                return reject("No rows updated when adding venue");
+                return reject("No rows updated when creating venue");
             }
             result = result as mysql.ResultSetHeader;
             if (result.affectedRows == 1) {
@@ -212,7 +232,7 @@ export async function createVenue(name: string, user: User) {
                     shows: [],
                 });
             }
-            return reject("No rows updated when adding venue");
+            return reject("No rows updated when creating venue");
         });
     });
 }
@@ -304,5 +324,38 @@ export async function getShows(venue: Venue) {
             rows = rows as RowDataPacket[];
             return resolve(dbToShows(rows));
         });
+    });
+}
+
+export async function createShow(venue: Venue, name: string, date: Date, defaultPrice: number) {
+    return new Promise<Show>((resolve, reject) => {
+        if (!venue.id) {
+            return reject("No venue ID in venue");
+        }
+        const pool = createPool();
+        pool.execute(
+            "INSERT INTO shows(venueID, name, date, defaultPrice) VALUES(?,?,?,?)",
+            [venue.id, name, date, defaultPrice],
+            (error, result) => {
+                // Close the connection, prevents issues with too many connections
+                pool.end();
+                if (error) {
+                    return reject("Database error:" + error);
+                }
+                if (!result) {
+                    return reject("No rows updated when creating show");
+                }
+                result = result as ResultSetHeader;
+                if (result.affectedRows == 1) {
+                    return resolve({
+                        id: result.insertId,
+                        name: name,
+                        date: date,
+                        active: true,
+                    });
+                }
+                return reject("No rows updated when creating show");
+            }
+        );
     });
 }
