@@ -19,6 +19,11 @@ Write-Host "S3 Bucket Name: $s3_bucket_name"
 cd frontend/
 npm install
 
+# Delete the .env file if it exists
+if (Test-Path ".env") {
+    Remove-Item ".env"
+}
+
 # Create .env file for building distribution with API Gateway Endpoint defined
 New-Item -ItemType File -Path ".env"
 
@@ -31,6 +36,11 @@ Get-Content ".env"
 
 # Create distribution for deployment
 npm run build
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "The build failed - please check the error message above"
+    cd ..
+    exit 1
+}
 cd dist/
 
 # Sync distribution with S3
@@ -47,3 +57,6 @@ aws cloudfront wait invalidation-completed --distribution-id $cloudfront_distrib
 $cloudfront_domain_name = aws cloudfront list-distributions --query "DistributionList.Items[?Id=='$cloudfront_distribution_id'].DomainName" --output text
 
 Write-Host "The invalidation is now complete - please visit your cloudfront URL to test: $cloudfront_domain_name"
+
+# Return to root directory
+cd ../..
