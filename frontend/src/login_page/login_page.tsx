@@ -13,6 +13,7 @@ function getInput(id: string) {
 
 function login_page() {
 
+  /*
   const verifyUser = (event: { preventDefault: () => void }) => {
     //TODO: check that username and password exists within database, and bring to correct view depending on Venue Manager, Administrator, Consumer
     //send username and hashed password to backend
@@ -32,7 +33,7 @@ function login_page() {
     //TODO: send user (consumer) to the shows page
     window.location.href = ""
     console.log("User goes to the shows page (not implemented yet).")
-  }
+  }*/
 
   function createShow() {
     //TODO: pass info to backend about the show
@@ -51,7 +52,7 @@ function login_page() {
     const showName = getInput("show-name");
     const venue = getInput("show-venue-name");
 
-    let data = {
+    const data = {
       "email": email,
       "passwd": password,
       "venue": venue,
@@ -89,7 +90,7 @@ function login_page() {
     const rightR = getInput("RightR");
     const rightC = getInput("RightC");
     console.log(venueName)
-    let data = {
+    const data = {
       "email": email,
       "passwd": password,
       "name": venueName,
@@ -140,7 +141,7 @@ function login_page() {
 
     console.log(venueName);
 
-    let data = {
+    const data = {
       "email": email,
       "passwd": password,
       "venue": venueName
@@ -166,7 +167,7 @@ function login_page() {
     const password = getInput("pwd");
     //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
 
-    let data = {
+    const data = {
       "email": email,
       "passwd": password
     }
@@ -176,7 +177,7 @@ function login_page() {
       console.log(response);
       //for each venue, create <option> element
       let str = ''
-      for (let venue of response.data) {
+      for (const venue of response.data) {
         str += "<option>" + venue.name + "</option>";
       }
 
@@ -221,13 +222,13 @@ function login_page() {
   //   }
   //   delete_list.innerHTML = str;
 
-  //   //put elements into 
+  //   //put elements into
   // })
 
 
 
 
-
+  /*
   function activateShow(): void {
     throw new Error('Function not implemented.');
   }
@@ -238,7 +239,7 @@ function login_page() {
 
   function editShow(): void {
     throw new Error('Function not implemented.');
-  }
+  }*/
 
   return (
     <>
@@ -263,14 +264,14 @@ function login_page() {
       <button onClick={() => listVenues()}>List venues</button>
       <div className="venues">
         <p><button onClick={() => createVenue()}>Create Venue</button></p>
-        
+
           <p><select name='Venue to be deleted' id="delete-venue-list">
             <option>Venue 1</option>
             <option>Venue 2</option>
             <option>Venue 3</option>
           </select></p>
           <button onClick={()=>deleteVenue()}>Delete Venue</button>
-        
+
       </div>
       <div className="vm-shows">
         <div className="createShows">
