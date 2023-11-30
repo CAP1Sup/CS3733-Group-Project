@@ -1,30 +1,19 @@
-# React + TypeScript + Vite
+# G.2 Iteration #1
+Hello! For testing this app, the grader will need to consider the following:
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Logins
 
-Currently, two official plugins are available:
+Due to the way the app is currently WIP, login information will be done by leaving the username and password in the corresponding boxes. There is no login button -- each button ("Create Venue", "Delete Venue", "Create Show") will work based on what is left in the login boxes.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Venue Manager login:
+Username: manager@gmail.com
+Password: e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d
 
-## Expanding the ESLint configuration
+Admin login:
+Username: admin@gmail.com
+Password: e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## Use Cases
 
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+For creating venues and shows, just specifying the login info and then filling out the boxes in each section will suffice.
+For deleting venues, you will have to hit the List Venues button, which will refresh the generic options with actual venues in the database, then select from the dropdown whichever venue you wish to remove, and finally, hit the "Delete Venue" button.
