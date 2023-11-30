@@ -42,7 +42,12 @@ function login_page() {
     const showDate = getInput("show-date");
     const showTime = getInput("show-time");
     const combinedDate = new Date(showDate + "T" + showTime);
-    const showPrice = parseFloat(getInput("show-default-price"));
+    const rawShowPrice = getInput("show-default-price")
+    let showPrice = 10;
+    if(rawShowPrice != ""){
+      showPrice = parseFloat(rawShowPrice);
+    }
+
     const showName = getInput("show-name");
     const venue = getInput("show-venue-name");
 
