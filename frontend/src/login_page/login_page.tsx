@@ -1,36 +1,15 @@
-import { useState } from 'react'
+//import { createHash } from 'crypto'
+  // TODO: crypto not installed?
 import '../App.css'
 import axios from 'axios'
-
-const url = 'https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod'
-
-
-// Assume resource always starts with a "/"
-function api(resource) {
-  return url + resource
-}
-
-// Details on Fetch can be found here:
-//
-// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-
-// 
-// resource is a string like "/calc" or "/constants/delete"
-export async function post(resource, data, handler) {
-  fetch(api(resource), {
-    method: "POST",
-    //headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)   // Stringify into string for request
-  })
-    .then((response) => response.json())
-    .then((responseJson) => handler(responseJson))
-    .catch((err) => handler(err))
-}
-
 
 const instance = axios.create({
   baseURL: 'https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod',
 });
+
+function getInput(id: string) {
+  return (document.getElementById(id) as HTMLInputElement).value;
+}
 
 function login_page() {
 
@@ -55,29 +34,27 @@ function login_page() {
     console.log("User goes to the shows page (not implemented yet).")
   }
 
-
   function createShow() {
     //TODO: pass info to backend about the show
-    const email = (document.getElementById("Username") as HTMLInputElement).value
-    const password = (document.getElementById("pwd") as HTMLInputElement).value
-    const showDate = (document.getElementById("show-date") as HTMLInputElement).value
-    const showTime = (document.getElementById("show-time") as HTMLInputElement).value
-    const showPrice = (document.getElementById("show-default-price") as HTMLInputElement).value
-    const showName = (document.getElementById("show-name") as HTMLInputElement).value
-    
-    //TODO: need venue information from View Venues page
-    const venue = "";
+    const email = getInput("username");
+    const password = getInput("pwd");
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+    const showDate = getInput("show-date");
+    const showTime = getInput("show-time");
+    const combinedDate = new Date(showDate + "T" + showTime);
+    const showPrice = parseFloat(getInput("show-default-price"));
+    const showName = getInput("show-name");
+    const venue = getInput("show-venue-name");
 
-    let data={
+    let data = {
       "email": email,
       "passwd": password,
       "venue": venue,
       "name": showName,
-      "datetime": showDate + "T" + showTime,
+      "time": combinedDate,
       "defaultPrice": showPrice
     }
-    console.log("createShow.")
-    //instance.post()
+
     instance.post("/create-show", data).then((response) => {
       console.log(response);
     }).catch((error) => {
@@ -91,48 +68,48 @@ function login_page() {
   }
 
   function createVenue() {
-    console.log("createVenue.")
 
-    //Retrieve values from elements
-    const email = (document.getElementById("Username") as HTMLInputElement).value
-    const password = (document.getElementById("pwd") as HTMLInputElement).value
-    const venueName = (document.getElementById("Venuename") as HTMLInputElement).value
-    const leftSect = (document.getElementById("LeftSect") as HTMLInputElement).value
-    const leftR = (document.getElementById("LeftR") as HTMLInputElement).value;
-    const leftC = (document.getElementById("LeftC") as HTMLInputElement).value;
-    const centerSect = (document.getElementById("CenterSect") as HTMLInputElement).value
-    const centerR = (document.getElementById("CenterR") as HTMLInputElement).value;
-    const centerC = (document.getElementById("CenterC") as HTMLInputElement).value;
-    const rightSect = (document.getElementById("RightSect") as HTMLInputElement).value
-    const rightR = (document.getElementById("RightR") as HTMLInputElement).value;
-    const rightC = (document.getElementById("RightC") as HTMLInputElement).value;
+    // Retrieve values from elements
+    const email = getInput("username");
+    const password = getInput("pwd");
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+    const venueName = getInput("create-venue-name");
+    const leftSect = getInput("LeftSect");
+    const leftR = getInput("LeftR");
+    const leftC = getInput("LeftC");
+    const centerSect = getInput("CenterSect");
+    const centerR = getInput("CenterR");
+    const centerC = getInput("CenterC");
+    const rightSect = getInput("RightSect");
+    const rightR = getInput("RightR");
+    const rightC = getInput("RightC");
     console.log(venueName)
     let data = {
-      "email" : email,
+      "email": email,
       "passwd": password,
       "name": venueName,
-      "sections" : [
+      "sections": [
         {
-          "name" : leftSect,
-          "columns" : leftC,
-          "rows" : leftR
+          "name": leftSect,
+          "columns": leftC,
+          "rows": leftR
         },
         {
-          "name" : centerSect,
-          "columns" : centerC,
-          "rows" : centerR
+          "name": centerSect,
+          "columns": centerC,
+          "rows": centerR
         },
         {
-          "name" : rightSect,
-          "columns" : rightC,
-          "rows" : rightR
+          "name": rightSect,
+          "columns": rightC,
+          "rows": rightR
         }
 
 
       ]
     }
 
-    post("/create-venue", data, (response) => {
+    instance.post("/create-venue", data).then((response) => {
       console.log(response);
     }).catch((error) => {
       console.log(error);
@@ -148,18 +125,23 @@ function login_page() {
 
   function deleteVenue() {
     //TODO: pass info from form to backend about deleting venue
-    console.log("deleteVenue.")
-    const email = (document.getElementById("Username") as HTMLInputElement).value
-    const password = (document.getElementById("pwd") as HTMLInputElement).value
-    const venueName = (document.getElementById("Venuename") as HTMLInputElement).value
-    
+    const email = getInput("username");
+    const password = getInput("pwd");
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+    const venueName = (document.getElementById("delete-venue-list") as HTMLSelectElement).value;
+
+    // const email = "manager@gmail.com";
+    // const password = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5";
+
+    console.log(venueName);
+
     let data = {
-      "email":email,
-      "passwd":password,
-      "venue":venueName
+      "email": email,
+      "passwd": password,
+      "venue": venueName
     }
 
-    instance.post("/create-venue", data).then((response) => {
+    instance.post("/delete-venue", data).then((response) => {
       console.log(response);
     }).catch((error) => {
       console.log(error);
@@ -175,33 +157,71 @@ function login_page() {
   }
 
   function listVenues() {
-    const email = (document.getElementById("Username") as HTMLInputElement).value
-    const password = (document.getElementById("pwd") as HTMLInputElement).value
-    
+    const email = getInput("username");
+    const password = getInput("pwd");
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+
     let data = {
-      "email" : email,
+      "email": email,
       "passwd": password
     }
     //make request
-    instance.post('/list-venues', data, (response) => {
+    instance.post('/list-venues', data).then((response) => {
+
+      console.log(response);
       //for each venue, create <option> element
-      let str=''
-      for (let v of response.venues){
-        str += "<option>" + v.name + "</option>";
+      let str = ''
+      for (let venue of response.data) {
+        str += "<option>" + venue.name + "</option>";
       }
 
       const delete_list = (document.getElementById('delete-venue-list') as HTMLSelectElement)
-      while(delete_list.length > 0){
+      while (delete_list.length > 0) {
         delete_list.remove(delete_list.length - 1);
       }
       delete_list.innerHTML = str;
-      
-      //put elements into 
     })
-    
-    
-    
+
+    /*fetch('https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod/list-venues', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        "email": "admin@gmail.com",
+        "passwd": "e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d",
+      })}
+    ).then(Response => console.log(Response))
+    .catch(console.error)*/
   }
+
+
+
+
+  // let data = {
+  //   "email": email,
+  //   "passwd": password
+  // }
+  // //make request
+  // instance.post('/list-venues', data, (response) => {
+  //   //for each venue, create <option> element
+  //   let str = ''
+  //   for (let v of response.venues) {
+  //     str += "<option>" + v.name + "</option>";
+  //   }
+
+  //   const delete_list = (document.getElementById('delete-venue-list') as HTMLSelectElement)
+  //   while (delete_list.length > 0) {
+  //     delete_list.remove(delete_list.length - 1);
+  //   }
+  //   delete_list.innerHTML = str;
+
+  //   //put elements into 
+  // })
+
+
+
+
 
   function activateShow(): void {
     throw new Error('Function not implemented.');
@@ -219,16 +239,15 @@ function login_page() {
     <>
       <div>
         <h1>Login Page!</h1>
-        <button onClick={(e) => console.log("hello")}>I am a consumer</button>
+        <button onClick={() => console.log("hello")}>I am a consumer</button>
       </div>
       <form action="" id="loginForm">
         <p>
-          Username: <input type="text" name="Username" id="Username" required />
+          Username: <input type="text" name="Username" id="username" required />
         </p>
         <p>
           Password: <input type="password" name="pwd" id="pwd" required />
         </p>
-        <input type="submit" value="Log in" />
       </form>
 
       <hr></hr>
@@ -236,17 +255,17 @@ function login_page() {
       <div>
         <h1>Venue View!</h1>
       </div>
-      <button onClick={(e)=>listVenues()}>list venue</button>
+      <button onClick={() => listVenues()}>List venues</button>
       <div className="venues">
-        <p><button onClick={(e) => createVenue()}>Create Venue</button></p>
-        <form id="delete-venue">
+        <p><button onClick={() => createVenue()}>Create Venue</button></p>
+        
           <p><select name='Venue to be deleted' id="delete-venue-list">
             <option>Venue 1</option>
             <option>Venue 2</option>
             <option>Venue 3</option>
           </select></p>
-          <input type='submit' value='Delete Venue' />
-        </form>
+          <button onClick={()=>deleteVenue()}>Delete Venue</button>
+        
       </div>
       <div className="vm-shows">
         <div className="createShows">
@@ -301,7 +320,7 @@ function login_page() {
       <div>
         <h1>Create Venue</h1>
         <p>
-          Venue Name: <input type="text" name="Venuename" id="Venuename" required />
+          Venue Name: <input type="text" name="Create Venue Name" id="create-venue-name" required />
         </p>
         <h2>Sections</h2>
         <h3>Left</h3>
@@ -325,17 +344,19 @@ function login_page() {
       <div>
 
         <h1>Create Show</h1>
-          Date:
-          <input type='date' id='show-date' />
-          Time:
-          <input type='time' id='show-time'/>
-          Default Price:
-          <input type='number' min='0' step='.01' id='show-default-price'/>
-          Name:
-          <input type='text' id='show-name'/>
-          {/* <input type='file' value='Image'/> */}
-          {/* TODO: this button should pass an image back to the  */}
-          <button onClick={(e)=>createShow()}>Create Show</button>
+        Date:
+        <input type='date' id='show-date' />
+        Time:
+        <input type='time' id='show-time' />
+        Default Price:
+        <input type='number' min='0' step='.01' id='show-default-price' />
+        Show Name:
+        <input type='text' id='show-name' />
+        {/* <input type='file' value='Image'/> */}
+        {/* TODO: this button should pass an image back to the  */}
+        Venue Name:
+        <input type='text' id='show-venue-name' />
+        <button onClick={() => createShow()}>Create Show</button>
 
       </div>
 
