@@ -176,16 +176,44 @@ function login_page() {
 
       console.log(response);
       //for each venue, create <option> element
-      let str = ''
+      let venuesStr = ''
+      let showsStr = ''
       for (const venue of response.data) {
-        str += "<option>" + venue.name + "</option>";
+        venuesStr += "<option>" + venue.name + "</option>";
+        for (const show of venue.shows) {
+          showsStr += "<option>" + show.name + "</option>";
+        }
       }
 
       const delete_list = (document.getElementById('delete-venue-list') as HTMLSelectElement)
       while (delete_list.length > 0) {
         delete_list.remove(delete_list.length - 1);
       }
-      delete_list.innerHTML = str;
+      delete_list.innerHTML = venuesStr;
+
+      const create_show_list = (document.getElementById('create-show-venue-list') as HTMLSelectElement)
+      while (create_show_list.length > 0) {
+        create_show_list.remove(create_show_list.length - 1);
+      }
+      create_show_list.innerHTML = venuesStr;
+
+      const activate_show_list = (document.getElementById('activate-show-list') as HTMLSelectElement)
+      while (activate_show_list.length > 0) {
+        activate_show_list.remove(activate_show_list.length - 1);
+      }
+      activate_show_list.innerHTML = showsStr;
+
+      const delete_show_list = (document.getElementById('delete-show-list') as HTMLSelectElement)
+      while (delete_show_list.length > 0) {
+        delete_show_list.remove(delete_show_list.length - 1);
+      }
+      delete_show_list.innerHTML = showsStr;
+
+      const edit_show_list = (document.getElementById('edit-show-list') as HTMLSelectElement)
+      while (edit_show_list.length > 0) {
+        edit_show_list.remove(edit_show_list.length - 1);
+      }
+      edit_show_list.innerHTML = showsStr;
     })
 
     /*fetch('https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod/list-venues', {
