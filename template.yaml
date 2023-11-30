@@ -161,6 +161,7 @@ Resources:
     WebSiteBucket:
         Type: "AWS::S3::Bucket"
         Properties:
+            BucketName: "bigticket-bucket"
             BucketEncryption:
                 ServerSideEncryptionConfiguration:
                     - BucketKeyEnabled: true
