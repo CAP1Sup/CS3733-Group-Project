@@ -359,3 +359,39 @@ export async function createShow(venue: Venue, name: string, date: Date, default
         );
     });
 }
+
+export async function deleteShows(venue: Venue) {
+    return new Promise<Show[]>((resolve, reject) => {
+        const pool = createPool();
+        let showsToDelete: RowDataPacket[];
+        pool.execute("SELECT * FROM shows WHERE venueID=?", [venue.id], (error, rows) => {
+            // Close the connection, prevents issues with too many connections
+            if (error) {
+                pool.end();
+                return reject("Database error getting shows to delete: " + error);
+            }
+            if (!rows) {
+                pool.end();
+                return reject("No shows for that venue to delete");
+            }
+            showsToDelete = rows as RowDataPacket[];
+        });
+        pool.execute("DELETE FROM shows WHERE venueID=?", [venue.id], (error, result) => {
+            // Close the connection, prevents issues with too many connections
+            pool.end();
+            if (error) {
+                return reject("Database error deleting shows: " + error);
+            }
+
+            // Process the result
+            result = result as ResultSetHeader;
+            if (!result) {
+                return reject("Unable to delete shows");
+            }
+            if (result.affectedRows > 0) {
+                return resolve(dbToShows(showsToDelete));
+            }
+            return reject("Unable to delete shows");
+        });
+    });
+}

@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
-import { deleteVenue, deleteSections, getUser } from "./libs/db-query";
+import { deleteVenue, deleteSections, getUser, deleteShows } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { getVenuesJSON } from "./libs/db-conv";
 import { User } from "./libs/db-types";
@@ -43,6 +43,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     try {
         const deletedVenues = await deleteVenue(request.venue, user);
         await deleteSections(deletedVenues[0]);
+        await deleteShows(deletedVenues[0]);
         // TODO: Delete all data that matches the venue ID (such as the shows and their blocks and seats)
         return successResponse(await getVenuesJSON(user));
     } catch (error) {
