@@ -1,44 +1,60 @@
-//import { useState } from 'react'
-import '../App.css'
+import React, {useState} from 'react';
+import './App.css';
+import Login from './login_page/login_page';
+import VenueView from './venue_view/venue_view'
+import VenueManagerMenu from './venue_manager_menu/venue_manager_menu'
+import CreateShow from './create_show/create_show'
+import CreateVenue from './create_venue/create_venue'
+import BuyTickets from './buy_tickets/buy_tickets'
+import ActiveShows from './active_shows/active_shows'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 
-function login_page() {
-  //const [count, setCount] = useState(0)
-
-  const verifyUser = (event: { preventDefault: () => void }) => {
-    //TODO: check that username and password exists within database, and bring to correct view depending on Venue Manager, Administrator, Consumer
-    //if user does not exist, throw error
-    event.preventDefault();
-    console.log("Error: user verification has not yet been implemented.")
-    window.location.href = '/venue_view.tsx'
-  }
-
-  /*
-  const viewShow = () => {
-    //TODO: make page link to the list shows (consumer) page
-    window.location.href = ""
-  }*/
-
-
-  return (
-      <>
-        <div>
-            <h1>Login Page!</h1>
-          <button onClick={()=>console.log("hello")}>I am a consumer</button>
+function TestingHomePage(){
+    return (
+        <>
+        <div className='bigMan'>
+            <div>
+            <a href="/venue-view">VenueView</a>
+            </div><div>
+            <a href="/venue-manager-menu">Venue Manager Menu</a>
+            </div><div>
+            <a href="/active-shows">Active Shows</a>
+            </div><div>
+            <a href="/create-show">Create Show</a>
+            </div><div>
+            <a href="/create-venue">Create Venue</a>
+            </div><div>
+            <a href="/buy-tickets">Buy Tickets</a>
+            </div><div>
+            <a href="/login">Login</a>
+            </div>
         </div>
-        <form onSubmit={verifyUser}>
-        <p>
-          Username: <input type="text" name="Username" id="Username" required></input>
-        </p>
-        <p>
-          Password: <input type="password" name="pwd" id="pwd" required></input>
-        </p>
-          <input type="submit" value="Log in"/>
-        </form>
-        <p className="read-the-docs">
-          TODO: implement verifyUser, viewShow.
-        </p>
-      </>
+        </>
     )
 }
 
-export default login_page
+export default function App(){
+    const [token, setToken] = useState();
+
+    // if(!token) {
+    //     return <Login setToken={setToken} />
+    // }
+
+    return (
+        <>
+        <TestingHomePage />
+        <hr />
+            <Router>
+                <Routes>
+                    <Route path="/venue-view" element={<VenueView />} />
+                    <Route path="/venue-manager-menu" element = {<VenueManagerMenu />} />
+                    <Route path="/active-shows" element = {<ActiveShows />} />
+                    <Route path="/create-show" element = {<CreateShow />} />
+                    <Route path="/create-venue" element = {<CreateVenue />} />
+                    <Route path="/buy-tickets" element={<BuyTickets />} />
+                    <Route path="/login" element={<Login />} />
+                </Routes>
+            </Router>
+        </>
+    )
+}

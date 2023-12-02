@@ -1,15 +1,7 @@
 //import { createHash } from 'crypto'
   // TODO: crypto not installed?
-import '../App.css'
-import axios from 'axios'
-
-const instance = axios.create({
-  baseURL: 'https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod',
-});
-
-function getInput(id: string) {
-  return (document.getElementById(id) as HTMLInputElement).value;
-}
+// import '../App.css'
+import {instance, getInput} from '../main'
 
 function login_page() {
 
@@ -35,43 +27,7 @@ function login_page() {
     console.log("User goes to the shows page (not implemented yet).")
   }*/
 
-  function createShow() {
-    //TODO: pass info to backend about the show
-    const email = getInput("username");
-    const password = getInput("pwd");
-    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
-    const showDate = getInput("show-date");
-    const showTime = getInput("show-time");
-    const combinedDate = new Date(showDate + "T" + showTime);
-    const rawShowPrice = getInput("show-default-price")
-    let showPrice = 10;
-    if(rawShowPrice != ""){
-      showPrice = parseFloat(rawShowPrice);
-    }
-
-    const showName = getInput("show-name");
-    const venue = getInput("show-venue-name");
-
-    const data = {
-      "email": email,
-      "passwd": password,
-      "venue": venue,
-      "name": showName,
-      "time": combinedDate,
-      "defaultPrice": showPrice
-    }
-
-    instance.post("/create-show", data).then((response) => {
-      console.log(response);
-    }).catch((error) => {
-      console.log(error);
-    });
-
-    //if failure, return error
-
-    //if success, change pages to venue view page
-    throw new Error('Function not implemented.');
-  }
+  
 
   function createVenue() {
 
@@ -273,6 +229,7 @@ function login_page() {
     <>
       <div>
         <h1>Login Page!</h1>
+        <a href='/create-venue/'>Link</a>
         <button onClick={() => console.log("hello")}>I am a consumer</button>
       </div>
       <form action="" id="loginForm">
@@ -286,113 +243,7 @@ function login_page() {
 
       <hr></hr>
 
-      <div>
-        <h1>Venue View!</h1>
-      </div>
-      <button onClick={() => listVenues()}>List venues</button>
-      <div className="venues">
-        <p><button onClick={() => createVenue()}>Create Venue</button></p>
-
-          <p><select name='Venue to be deleted' id="delete-venue-list">
-            <option>Venue 1</option>
-            <option>Venue 2</option>
-            <option>Venue 3</option>
-          </select></p>
-          <button onClick={()=>deleteVenue()}>Delete Venue</button>
-
-      </div>
-      <div className="vm-shows">
-        <div className="createShows">
-          <form id="create-show">
-            Create Show:
-            <p><select name='Create Show' id="create-show-venue-list">
-              <option>Venue 1</option>
-              <option>Venue 2</option>
-              <option>Venue 3</option>
-            </select></p>
-            <button name="create-show">Create Show</button>
-          </form>
-        </div>
-        <div className="activateShows">
-          <form id="activate-show">
-            Activate Show:
-            <p><select name='Activate Show' id="activate-show-list">
-              <option>Show 1</option>
-              <option>Show 2</option>
-              <option>Show 3</option>
-            </select></p>
-            <button name="activate-show">Activate Show</button>
-          </form>
-        </div>
-        <div className="deleteShows">
-          <form id="delete-show">
-            Delete Show:
-            <p><select name='Delete Show' id="delete-show-list">
-              <option>Show 1</option>
-              <option>Show 2</option>
-              <option>Show 3</option>
-            </select></p>
-            <button name="delete-show">Delete Show</button>
-          </form>
-        </div>
-        <div className="editShows">
-          <form id="edit-show">
-            Edit Show:
-            <p><select name='Edit Show' id="edit-show-list">
-              <option>Show 1</option>
-              <option>Show 2</option>
-              <option>Show 3</option>
-            </select></p>
-          </form>
-          <button name="edit-show">Edit Show</button>
-        </div>
-
-      </div>
-
-      <hr></hr>
-
-      <div>
-        <h1>Create Venue</h1>
-        <p>
-          Venue Name: <input type="text" name="Create Venue Name" id="create-venue-name" required />
-        </p>
-        <h2>Sections</h2>
-        <h3>Left</h3>
-        Section Name: <input type="text" name="LeftSect" id="LeftSect" required />
-        Left Rows: <input type="number" min='1' name="LeftR" id="LeftR" required />
-        Left Columns: <input type="number" min='1' name="LeftC" id="LeftC" required />
-        <h3>Center</h3>
-        Section Name: <input type="text" name="CenterSect" id="CenterSect" required />
-        Center Rows: <input type="number" min='1' name="CenterR" id="CenterR" required />
-        Center Columns: <input type="number" min='1' name="CenterC" id="CenterC" required />
-        <h3>Right</h3>
-        Section Name: <input type="text" name="RightSect" id="RightSect" required />
-        Right Rows: <input type="number" min='1' name="RightR" id="RightR" required />
-        Right Columns: <input type="number" min='1' name="RightC" id="RightC" required />
-        <p></p>
-        <button onClick={() => createVenue()}>Create Venue</button>
-      </div>
-
-      <hr></hr>
-
-      <div>
-
-        <h1>Create Show</h1>
-        Date:
-        <input type='date' id='show-date' />
-        Time:
-        <input type='time' id='show-time' />
-        Default Price:
-        <input type='number' min='0' step='.01' id='show-default-price' />
-        Show Name:
-        <input type='text' id='show-name' />
-        {/* <input type='file' value='Image'/> */}
-        {/* TODO: this button should pass an image back to the  */}
-        Venue Name:
-        <input type='text' id='show-venue-name' />
-        <button onClick={() => createShow()}>Create Show</button>
-
-      </div>
+      
 
     </>
   )
