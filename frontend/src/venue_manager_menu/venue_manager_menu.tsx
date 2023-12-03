@@ -2,7 +2,7 @@
   // TODO: crypto not installed?
 import '../App.css'
 import axios from 'axios'
-
+import { getPassword, getUsername } from '../useLogin';
 
 const instance = axios.create({
   baseURL: 'https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod',
@@ -14,8 +14,8 @@ function getInput(id: string) {
 export default function VenueManagerMenu() {
 
     function activate_show() {
-        const email = getInput("username");
-        const password = getInput("pwd");
+        const email = getUsername();
+        const password = getPassword();
         //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const showName = getInput("show-name");
         const venue = getInput("show-venue-name");
@@ -38,8 +38,8 @@ export default function VenueManagerMenu() {
       }
 
       function delete_show() {
-        const email = getInput("username");
-        const password = getInput("pwd");
+        const email = getUsername();
+        const password = getPassword();
         //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const showName = getInput("show-name");
         const venue = getInput("show-venue-name");

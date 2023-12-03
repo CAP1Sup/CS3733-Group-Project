@@ -2,8 +2,13 @@
   // TODO: crypto not installed?
 // import '../App.css'
 import {instance, getInput} from '../main'
+import PropTypes from 'prop-types';
+import React, {useState} from 'react';
 
-function login_page() {
+export default function Login({ appUsername, appPassword }) {
+
+  const [username, setUsername] = useState();
+  const [password, setPassword] = useState();
 
   /*
   const verifyUser = (event: { preventDefault: () => void }) => {
@@ -18,16 +23,6 @@ function login_page() {
     console.log("Error: user verification has not yet been implemented.")
     window.location.href = '/venue_view/venue_view.tsx' //page after successful login
   }
-
-
-
-  const viewShow = () => {
-    //TODO: send user (consumer) to the shows page
-    window.location.href = ""
-    console.log("User goes to the shows page (not implemented yet).")
-  }*/
-
-  
 
   function createVenue() {
 
@@ -182,71 +177,39 @@ function login_page() {
         "passwd": "e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d",
       })}
     ).then(Response => console.log(Response))
-    .catch(console.error)*/
-  }
-
-
-
-
-  // let data = {
-  //   "email": email,
-  //   "passwd": password
-  // }
-  // //make request
-  // instance.post('/list-venues', data, (response) => {
-  //   //for each venue, create <option> element
-  //   let str = ''
-  //   for (let v of response.venues) {
-  //     str += "<option>" + v.name + "</option>";
-  //   }
-
-  //   const delete_list = (document.getElementById('delete-venue-list') as HTMLSelectElement)
-  //   while (delete_list.length > 0) {
-  //     delete_list.remove(delete_list.length - 1);
-  //   }
-  //   delete_list.innerHTML = str;
-
-  //   //put elements into
-  // })
-
-
-
-
-  /*
-  function activateShow(): void {
-    throw new Error('Function not implemented.');
-  }
-
-  function deleteShow(): void {
-    throw new Error('Function not implemented.');
-  }
-
-  function editShow(): void {
-    throw new Error('Function not implemented.');
+    .catch(console.error)
   }*/
+
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+    appUsername(username);
+    appPassword(password);
+    window.location.href = '/venue-view';
+  }
 
   return (
     <>
       <div>
         <h1>Login Page!</h1>
-        <a href='/create-venue/'>Link</a>
-        <button onClick={() => console.log("hello")}>I am a consumer</button>
+        <button onClick={(e) => window.location.href = '/active-shows'}>I am a consumer</button>
       </div>
-      <form action="" id="loginForm">
+      <form onSubmit={handleSubmit} id="loginForm">
+        <label>
+          <p>Username</p>
+          <input type="text" name="Username" id="username" onChange={(e)=>setUsername(e.target.value)} required />
+        </label>
+        <label>
+          <p>Password</p>
+          <input type="password" name="pwd" id="pwd" onChange={(e)=>setPassword(e.target.value)}  required />
+        </label>
         <p>
-          Username: <input type="text" name="Username" id="username" required />
-        </p>
-        <p>
-          Password: <input type="password" name="pwd" id="pwd" required />
+        <button type='submit'>Submit</button>
         </p>
       </form>
-
-      <hr></hr>
-
-      
-
     </>
-  )
+)
 }
 
-export default login_page
+Login.proptypes = {
+  setLogin: PropTypes.func.isRequired
+}

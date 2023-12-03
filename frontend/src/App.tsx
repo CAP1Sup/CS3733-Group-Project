@@ -8,6 +8,7 @@ import CreateVenue from './create_venue/create_venue'
 import BuyTickets from './buy_tickets/buy_tickets'
 import ActiveShows from './active_shows/active_shows'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import useLogin from './useLogin';
 
 function TestingHomePage(){
     return (
@@ -34,11 +35,12 @@ function TestingHomePage(){
 }
 
 export default function App(){
-    const [token, setToken] = useState();
+    const {username, setUsername, password, setPassword} = useLogin();
 
-    // if(!token) {
-    //     return <Login setToken={setToken} />
-    // }
+    if(!username || !password){
+        return (
+        <><Login appUsername={setUsername} appPassword={setPassword} /></>)
+    }
 
     return (
         <>
@@ -52,7 +54,7 @@ export default function App(){
                     <Route path="/create-show" element = {<CreateShow />} />
                     <Route path="/create-venue" element = {<CreateVenue />} />
                     <Route path="/buy-tickets" element={<BuyTickets />} />
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={<Login appUsername={setUsername} appPassword={setPassword} />} />
                 </Routes>
             </Router>
         </>

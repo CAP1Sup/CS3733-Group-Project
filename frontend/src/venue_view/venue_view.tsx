@@ -1,6 +1,8 @@
 //import { useState } from 'react'
 import '../App.css'
 import {instance, getInput} from '../main'
+import { getPassword, getUsername } from '../useLogin';
+
 
 /**
  * This page is meant to have all of the venues.
@@ -11,8 +13,8 @@ function venue_view() {
   //const [count, setCount] = useState(0)
 
   function listVenues() {
-    const email = getInput("username");
-    const password = getInput("pwd");
+    const email = getUsername();
+    const password = getPassword();
     //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
 
     const data = {
@@ -79,8 +81,8 @@ function venue_view() {
 
   function deleteVenue() {
     //TODO: pass info from form to backend about deleting venue
-    const email = getInput("username");
-    const password = getInput("pwd");
+    const email = getUsername();
+    const password = getPassword();
     //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
     const venueName = (document.getElementById("delete-venue-list") as HTMLSelectElement).value;
 

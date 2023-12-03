@@ -1,11 +1,12 @@
 import {instance, getInput} from '../main'
+import { getPassword, getUsername } from '../useLogin';
 
 export default function CreateShow(){
     
     function createShow() {
         //TODO: pass info to backend about the show
-        const email = getInput("username");
-        const password = getInput("pwd");
+        const email = getUsername();
+        const password = getPassword();
         //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const showDate = getInput("show-date");
         const showTime = getInput("show-time");
@@ -37,7 +38,6 @@ export default function CreateShow(){
         //if failure, return error
     
         //if success, change pages to venue view page
-        throw new Error('Function not implemented.');
     }
 
     return (

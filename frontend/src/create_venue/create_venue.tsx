@@ -1,12 +1,13 @@
 import {instance, getInput} from '../main'
+import { getPassword, getUsername } from '../useLogin';
 
 export default function CreateVenue(){
     
     function createVenue() {
 
         // Retrieve values from elements
-        const email = getInput("username");
-        const password = getInput("pwd");
+        const email = getUsername();
+        const password = getPassword();
         //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const venueName = getInput("create-venue-name");
         const leftSect = getInput("LeftSect");
