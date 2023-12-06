@@ -1,6 +1,6 @@
 //import { useState } from 'react'
 import '../App.css'
-import {instance, getInput} from '../main'
+import { instance, getInput } from '../main'
 import { getPassword, getUsername } from '../useLogin';
 
 
@@ -112,23 +112,71 @@ function venue_view() {
     //if success, change pages to venue view page
   }
 
+  function activate_show() {
+    const email = getUsername();
+    const password = getPassword();
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+    const showName = getInput("show-name");
+    const venue = getInput("show-venue-name");
+    const showDate = getInput("show-date");
+    const showTime = getInput("show-time");
+    const combinedDate = new Date(showDate + "T" + showTime);
+
+    const data = {
+      "email": email,
+      "passwd": password,
+      "venue": venue,
+      "show": showName,
+      "time": combinedDate,
+    }
+    //make request
+    instance.post('/activate-show', data).then((response) => {
+
+      console.log(response);
+    })
+  }
+
+  function delete_show() {
+    const email = getUsername();
+    const password = getPassword();
+    //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+    const showName = getInput("show-name");
+    const venue = getInput("show-venue-name");
+    const showDate = getInput("show-date");
+    const showTime = getInput("show-time");
+    const combinedDate = new Date(showDate + "T" + showTime);
+
+    const data = {
+      "email": email,
+      "passwd": password,
+      "venue": venue,
+      "show": showName,
+      "time": combinedDate,
+    }
+    //make request
+    instance.post('/delete-show', data).then((response) => {
+
+      console.log(response);
+    })
+  }
+
   console.log("Venue View")
 
   return (
-      <>
-        <div>
+    <>
+      <div>
         <h1>Venue View!</h1>
       </div>
       <button onClick={() => listVenues()}>List venues</button>
       <div className="venues">
         <p><button>Create Venue</button></p>
 
-          <p><select name='Venue to be deleted' id="delete-venue-list">
-            <option>Venue 1</option>
-            <option>Venue 2</option>
-            <option>Venue 3</option>
-          </select></p>
-          <button onClick={()=>deleteVenue()}>Delete Venue</button>
+        <p><select name='Venue to be deleted' id="delete-venue-list">
+          <option>Venue 1</option>
+          <option>Venue 2</option>
+          <option>Venue 3</option>
+        </select></p>
+        <button onClick={() => deleteVenue()}>Delete Venue</button>
 
       </div>
       <div className="vm-shows">
@@ -178,8 +226,8 @@ function venue_view() {
         </div>
 
       </div>
-      </>
-    )
+    </>
+  )
 }
 
 export default venue_view
