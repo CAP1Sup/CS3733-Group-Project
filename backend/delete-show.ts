@@ -1,17 +1,16 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { beginTransaction, createShow, getUser, getVenues, venueExists } from "./libs/db-query";
+import { getVenuesJSON } from "./libs/db-conv";
+import { beginTransaction, deleteShow, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
+import { Show, User, Venue } from "./libs/db-types";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
-import { User, Venue } from "./libs/db-types";
-import { getShowJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
-interface CreateShowRequest {
+interface DeleteShowRequest {
     email: string;
     passwd: string;
     venue: string;
-    name: string;
+    show: string;
     time: string;
-    defaultPrice: number;
 }
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -27,17 +26,10 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: CreateShowRequest = JSON.parse(event.body);
+    const request: DeleteShowRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
-    if (
-        !request.email ||
-        !request.passwd ||
-        !request.venue ||
-        !request.name ||
-        !request.time ||
-        !request.defaultPrice
-    ) {
+    if (!request.email || !request.passwd || !request.venue || !request.show || !request.time) {
         return errorResponse("Malformed request, missing required field");
     }
 
@@ -47,11 +39,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return errorResponse("Invalid time");
     }*/
 
-    // Make sure that the price is positive
-    if (request.defaultPrice < 0) {
-        return errorResponse("Invalid default price");
-    }
-
     // Start the DB connection
     // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
     let db: Connection | undefined;
@@ -60,26 +47,43 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         db = await beginTransaction();
 
         // Get the user's information
-        const user = await getUser(request.email, request.passwd, db);
+        let user = await getUser(request.email, request.passwd, db);
 
         // Check if the user is authorized for the given venue
         let venue: Venue;
-        const usersVenues = await getVenues(user, db);
-        if (usersVenues.some((venue) => venue.name === request.venue)) {
-            venue = usersVenues.find((venue) => venue.name === request.venue) as Venue;
+
+        const userVenues = await getVenues(user, db);
+        if (userVenues.some((venue) => venue.name === request.venue)) {
+            venue = userVenues.find((venue) => venue.name === request.venue) as Venue;
         } else {
             // User doesn't have access to the venue, find out if the venue exists
-            if (await venueExists(request.venue, db)) {
-                throw "You're not authorized to make modifications to that venue";
-            }
-            throw "Venue doesn't exist";
+            venueExists(request.venue, db).catch((error) => {
+                throw error;
+            });
+            throw "You're not authorized to make modifications to that venue";
         }
 
-        // Attempt to create the show
-        const show = await createShow(venue, request.name, new Date(request.time), request.defaultPrice, db);
+        // Check if the show exists
+        let show: Show;
+        venue.shows = await getShows(venue, db);
+        if (venue.shows.some((show) => show.name === request.show && show.time.toISOString() === request.time)) {
+            show = venue.shows.find(
+                (show) => show.name === request.show && show.time.toISOString() === request.time
+            ) as Show;
+        } else {
+            throw "Specified show doesn't exist";
+        }
 
-        // Get the seating data for the show
-        const showJSON = await getShowJSON(venue, show, db);
+        // Check if the user is authorized to delete the show
+        if (show.active && !user.isAdmin) {
+            throw "Only administrators can delete an active show";
+        }
+
+        // Attempt to delete the show
+        await deleteShow(venue, show, db);
+
+        // Get the venues that match the user's info
+        const venueJSON = await getVenuesJSON(user, db);
 
         // Commit the transaction
         await db.commit();
@@ -87,8 +91,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Close the connection
         await db.end();
 
-        // Return the seats in the show
-        return successResponse(showJSON);
+        // Return the updated list of venues
+        return successResponse(venueJSON);
     } catch (error) {
         // Rollback the transaction, there was an error
         if (db) {

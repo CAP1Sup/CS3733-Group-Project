@@ -1,6 +1,16 @@
 import { RowDataPacket } from "mysql2";
-import { getShows, getUser, getVenues } from "./db-query";
-import { Section, Show, User, Venue } from "./db-types";
+import { getSeats, getShows, getUser, getVenues } from "./db-query";
+import { Block, Seat, Section, Show, User, Venue } from "./db-types";
+import { Connection } from "mysql2/promise";
+
+export function dbToUser(userRows: RowDataPacket[]): User {
+    return {
+        id: userRows[0].ID,
+        email: userRows[0].email,
+        passwd: userRows[0].passwd,
+        isAdmin: userRows[0].isAdmin,
+    };
+}
 
 export function dbToVenues(venueRows: RowDataPacket[]) {
     const venues: Venue[] = [];
@@ -22,7 +32,7 @@ export function dbToSections(sectionRows: RowDataPacket[]) {
             id: sectionRows[i].ID,
             name: sectionRows[i].name,
             rows: sectionRows[i].rows,
-            columns: sectionRows[i].columns,
+            columns: sectionRows[i].cols,
         };
         sections.push(section);
     }
@@ -35,7 +45,7 @@ export function dbToShows(showRows: RowDataPacket[]) {
         const show: Show = {
             id: showRows[i].ID,
             name: showRows[i].name,
-            date: showRows[i].date,
+            time: new Date(showRows[i].date),
             active: showRows[i].active,
         };
         shows.push(show);
@@ -43,71 +53,77 @@ export function dbToShows(showRows: RowDataPacket[]) {
     return shows;
 }
 
-export async function getVenuesJSON(user: User) {
+export function dbToSeats(seatRows: RowDataPacket[]) {
+    const seats: Seat[] = [];
+    for (let i = 0; i < seatRows.length; i++) {
+        const seat: Seat = {
+            id: seatRows[i].ID,
+            blockId: seatRows[i].blockID,
+            row: seatRows[i].row,
+            column: seatRows[i].col,
+            purchased: seatRows[i].purchased,
+        };
+        seats.push(seat);
+    }
+    return seats;
+}
+
+export function dbToBlock(blockRows: RowDataPacket[]) {
+    const blocks: Block[] = [];
+    for (let i = 0; i < blockRows.length; i++) {
+        const block: Block = {
+            id: blockRows[i].ID,
+            showID: blockRows[i].showID,
+            name: blockRows[i].name,
+            price: blockRows[i].price,
+        };
+        blocks.push(block);
+    }
+    return blocks;
+}
+
+export async function getVenuesJSON(user: User, db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {
-        try {
-            const venues = await getVenues(user);
-            for (let i = 0; i < venues.length; i++) {
-                if (venues[i].id) {
-                    venues[i].shows = await getShows(venues[i]);
-                } else {
-                    reject("No venue ID in venue");
-                }
-            }
+        let venues: Venue[];
 
-            // Remove the unneeded data from the JSON
-            for (let i = 0; i < venues.length; i++) {
-                delete venues[i].id;
-                delete venues[i].sections;
-                if (venues[i].shows) {
-                    for (let j = 0; j < venues[i].shows.length; j++) {
-                        delete venues[i].shows[j].id;
-                        delete venues[i].shows[j].defaultPrice;
-                    }
-                } else {
-                    reject("No shows in venue");
-                }
-            }
-            return resolve(JSON.stringify(venues));
+        // Attempt to get the venues
+        try {
+            venues = await getVenues(user, db);
         } catch (error) {
             return reject(error);
         }
+
+        for (let i = 0; i < venues.length; i++) {
+            if (venues[i].id) {
+                venues[i].shows = await getShows(venues[i], db);
+            } else {
+                reject("No venue ID in venue");
+            }
+        }
+
+        // Remove the unneeded data from the JSON
+        for (let i = 0; i < venues.length; i++) {
+            delete venues[i].id;
+            delete venues[i].sections;
+            if (venues[i].shows) {
+                for (let j = 0; j < venues[i].shows.length; j++) {
+                    delete venues[i].shows[j].id;
+                    delete venues[i].shows[j].defaultPrice;
+                }
+            } else {
+                reject("No shows in venue");
+            }
+        }
+        return resolve(JSON.stringify(venues));
     });
 }
 
-export async function getShowJSON(show: Show) {
+export async function getShowJSON(venue: Venue, show: Show, db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {
         try {
-            // TODO: Finish writing
-            /*
-            const sections = await getSections(show);
-            for (let i = 0; i < sections.length; i++) {
-                if (sections[i].id) {
-                    sections[i].seats = await getSeats(sections[i]);
-                } else {
-                    throw "No section ID in section";
-                }
-            }
-
-            // Remove the unneeded data from the JSON
-            for (let i = 0; i < sections.length; i++) {
-                delete sections[i].id;
-                delete sections[i].venue;
-                if (sections[i].seats) {
-                    for (let j = 0; j < sections[i].seats.length; j++) {
-                        delete sections[i].seats[j].id;
-                        delete sections[i].seats[j].section;
-                        delete sections[i].seats[j].block;
-                        delete sections[i].seats[j].show;
-                    }
-                } else {
-                    throw "No seats in section";
-                }
-            }
-            return JSON.stringify(sections);*/
-            return resolve("");
+            return resolve(JSON.stringify(await getSeats(venue, show, db)));
         } catch (error) {
             return reject(error);
         }

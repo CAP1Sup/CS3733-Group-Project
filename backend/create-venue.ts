@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import mysql, { RowDataPacket } from "mysql2";
-import { createUser, createPool, getShows, getUser, getVenues, createSection, createVenue } from "./libs/db-query.ts";
+import { createUser, getUser, createSection, createVenue, beginTransaction } from "./libs/db-query.ts";
 import { getVenuesJSON } from "./libs/db-conv.ts";
 import { errorResponse, successResponse } from "./libs/htmlResponses.ts";
 import { Section, User } from "./libs/db-types.ts";
+import { Connection } from "mysql2/promise";
 
 /**
  *
@@ -74,29 +74,56 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
     }
 
-    // Get the user's information
-    let user: User;
+    // Start the DB connection
+    // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
+    let db: Connection | undefined;
     try {
-        user = await getUser(request.email, request.passwd);
-    } catch (error) {
-        if (error === "User doesn't exist") {
-            try {
-                user = await createUser(request.email, request.passwd, false);
-            } catch (error) {
-                return errorResponse(error as string);
+        // Create a new transaction with the DB
+        db = await beginTransaction();
+
+        // Get the user's information
+        let user: User;
+        try {
+            user = await getUser(request.email, request.passwd, db);
+        } catch (error) {
+            if (error === "User doesn't exist") {
+                user = await createUser(request.email, request.passwd, false, db);
+            } else {
+                throw error;
             }
         }
-        return errorResponse(error as string);
-    }
 
-    // Attempt to create the venue
-    try {
-        const venue = await createVenue(request.name, user);
+        // Attempt to create the venue
+        const venue = await createVenue(request.name, user, db);
         for (let i = 0; i < request.sections.length; i++) {
-            await createSection(venue, request.sections[i].name, request.sections[i].rows, request.sections[i].columns);
+            await createSection(
+                venue,
+                request.sections[i].name,
+                request.sections[i].rows,
+                request.sections[i].columns,
+                db
+            );
         }
-        return successResponse(await getVenuesJSON(user));
+
+        // Get the venues that match the user's info
+        const venueJSON = await getVenuesJSON(user, db);
+
+        // Commit the transaction
+        await db.commit();
+
+        // Close the connection
+        await db.end();
+
+        // Return the updated list of venues
+        return successResponse(venueJSON);
     } catch (error) {
+        // Rollback the transaction, there was an error
+        if (db) {
+            await db.rollback();
+            await db.end();
+        }
+
+        // Return the error
         return errorResponse(error as string);
     }
 };

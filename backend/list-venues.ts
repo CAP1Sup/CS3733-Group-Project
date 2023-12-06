@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
-import { User } from "./libs/db-types";
-import { getUser } from "./libs/db-query";
+import { beginTransaction, getUser } from "./libs/db-query";
 import { getVenuesJSON } from "./libs/db-conv";
+import { Connection } from "mysql2/promise";
 
 interface ListVenuesRequest {
     email: string;
@@ -30,18 +30,35 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return errorResponse("Malformed request, missing parameters");
     }
 
-    // Get the user's information
-    let user: User;
+    // Create a new transaction with the DB
+    // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
+    let db: Connection | undefined;
     try {
-        user = await getUser(request.email, request.passwd);
-    } catch (error) {
-        return errorResponse(error as string);
-    }
+        // Create a new transaction with the DB
+        db = await beginTransaction();
 
-    // Return the user's venues
-    try {
-        return successResponse(await getVenuesJSON(user));
+        // Get the user's information
+        let user = await getUser(request.email, request.passwd, db);
+
+        // Get the venues that match the user's info
+        const venueJSON = await getVenuesJSON(user, db);
+
+        // Commit the transaction
+        await db.commit();
+
+        // Close the DB connection
+        await db.end();
+
+        // Return the user's venues
+        return successResponse(venueJSON);
     } catch (error) {
+        // Roll back the transaction, there was an error
+        if (db) {
+            await db.rollback();
+            await db.end();
+        }
+
+        // Return the error
         return errorResponse(error as string);
     }
 };

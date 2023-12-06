@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ResultSetHeader, RowDataPacket } from "mysql2";
-import { deleteVenue, deleteSections, getUser, deleteShows } from "./libs/db-query";
+import { deleteVenue, deleteSections, getUser, deleteShow, getShows, beginTransaction } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { getVenuesJSON } from "./libs/db-conv";
 import { User } from "./libs/db-types";
+import { Connection } from "mysql2/promise";
 
 interface DeleteVenueRequest {
     venue: string;
@@ -31,22 +31,47 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return errorResponse("Malformed request, missing parameters");
     }
 
-    // Get the user's information
-    let user: User;
+    // Start the DB connection
+    // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
+    let db: Connection | undefined;
     try {
-        user = await getUser(request.email, request.passwd);
-    } catch (error) {
-        return errorResponse(error as string);
-    }
+        // Create a new transaction with the DB
+        db = await beginTransaction();
 
-    // Attempt to delete the venues that match the user's info
-    try {
-        const deletedVenues = await deleteVenue(request.venue, user);
-        await deleteSections(deletedVenues[0]);
-        await deleteShows(deletedVenues[0]);
-        // TODO: Delete all data that matches the venue ID (such as the shows and their blocks and seats)
-        return successResponse(await getVenuesJSON(user));
+        // Get the user's information
+        const user = await getUser(request.email, request.passwd, db);
+
+        // Attempt to delete the venues that match the user's info
+        const deletedVenue = (await deleteVenue(request.venue, user, db))[0];
+
+        // Delete the sections that match the venue
+        await deleteSections(deletedVenue, db);
+
+        // Delete the shows that match the venue
+        let shows = await getShows(deletedVenue, db);
+        for (let i = 0; i < shows.length; i++) {
+            await deleteShow(deletedVenue, shows[i], db);
+        }
+
+        // Get the venues that match the user's info
+        const venueJSON = await getVenuesJSON(user, db);
+
+        // Commit the transaction
+        await db.commit();
+
+        // Close the connection
+        await db.end();
+
+        // Return the updated list of venues
+        return successResponse(venueJSON);
     } catch (error) {
+        // Rollback the transaction, there was an error
+        if (db) {
+            await db.rollback();
+            await db.end();
+        }
+
+        // Return the error
         return errorResponse(error as string);
     }
 };
