@@ -140,7 +140,7 @@ function venue_view() {
     const email = getUsername();
     const password = getPassword();
     //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
-    const showName = getInput("show-name");
+    const showName = (document.getElementById("delete-show-list") as HTMLSelectElement).value;
     const venue = getInput("show-venue-name");
     const showDate = getInput("show-date");
     const showTime = getInput("show-time");
@@ -210,7 +210,7 @@ function venue_view() {
               <option>Show 2</option>
               <option>Show 3</option>
             </select></p>
-            <button name="delete-show">Delete Show</button>
+            <button onClick={() => delete_show()}>Delete Show</button>
           </form>
         </div>
         <div className="editShows">
