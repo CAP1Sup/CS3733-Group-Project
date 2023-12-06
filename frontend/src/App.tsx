@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+
 import './App.css';
 import Login from './login_page/login_page';
 import VenueView from './venue_view/venue_view'
@@ -15,9 +15,11 @@ function TestingHomePage(){
         <>
         <div className='bigMan'>
             <div>
-            <a href="/venue-view">VenueView</a>
-            </div><div>
             <a href="/active-shows">Active Shows</a>
+            </div><div>
+            <a href='/all-shows'>All Shows</a>
+            </div><div>
+            <a href="/venue-view">VenueView</a>
             </div><div>
             <a href="/create-show">Create Show</a>
             </div><div>
@@ -28,7 +30,7 @@ function TestingHomePage(){
             <a href="/login">Login</a>
             </div>
         </div>
-        </>
+    </>
     )
 }
 

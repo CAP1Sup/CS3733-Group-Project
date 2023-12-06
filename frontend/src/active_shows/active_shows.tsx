@@ -33,17 +33,40 @@ function active_shows() {
         instance.get('/list-active-shows').then((response) => {
     
           console.log(response);
+          let venuesStr = ''
+          let showsStr = ''
+          for (const venue of response.data) {
+            venuesStr += "<option>" + venue.name + "</option>";
+            for (const show of venue.shows) {
+              showsStr += "<option>" + show.name + "</option>";
+            }
+          }
+    
+          const active_show_list = (document.getElementById('active-show-list') as HTMLSelectElement)
+          while (active_show_list.length > 0) {
+            active_show_list.remove(active_show_list.length - 1);
+          }
+          console.log(showsStr);
+          active_show_list.innerHTML = showsStr;
         })
       }
 
-      
+
   return (
     <>
-      <div>
-
-        <h1>Hi!</h1>
+       <div>
+        <h1>Active Shows</h1>
       </div>
-
+        <div className="activeShows">
+          <form id="active-show">
+            <p><select name='Active Shows' id="active-show-list">
+              <option>Show 1</option>
+              <option>Show 2</option>
+              <option>Show 3</option>
+            </select></p>
+            <button onClick={() => list_active_shows()}>Active Shows</button>
+          </form>
+        </div>
     </>
   )
 }

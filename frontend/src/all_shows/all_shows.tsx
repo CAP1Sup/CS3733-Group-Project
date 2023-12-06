@@ -4,9 +4,53 @@ import { getPassword, getUsername } from '../useLogin';
 //import { createHash } from 'crypto'
   // TODO: crypto not installed?
   import '../App.css'
+import { useEffect } from 'react';
   
   function all_shows() {
   
+    function listVenues() {
+      const email = getUsername();
+      const password = getPassword();
+      //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
+  
+      const data = {
+        "email": email,
+        "passwd": password
+      }
+      //make request
+      instance.post('/list-venues', data).then((response) => {
+  
+        console.log(response);
+        //for each venue, create <option> element
+        let venuesStr = ''
+        let showsStr = ''
+        for (const venue of response.data) {
+          venuesStr += "<option>" + venue.name + "</option>";
+          for (const show of venue.shows) {
+            showsStr += "<option>" + show.name + "</option>";
+          }
+        }
+  
+        const delete_show_list = (document.getElementById('delete-show-list') as HTMLSelectElement)
+        while (delete_show_list.length > 0) {
+          delete_show_list.remove(delete_show_list.length - 1);
+        }
+        console.log(showsStr);
+        delete_show_list.innerHTML = showsStr;
+  
+        const generate_show_list = (document.getElementById('generate-show-list') as HTMLSelectElement)
+        while (generate_show_list.length > 0) {
+          generate_show_list.remove(generate_show_list.length - 1);
+        }
+        generate_show_list.innerHTML = showsStr;
+      })
+    }
+
+    //This line runs listVenues() when the page first loads
+    useEffect(()=>{
+      listVenues();
+    }, []);
+
     function delete_show() {
         const email = getUsername();
         const password = getPassword();
@@ -58,6 +102,7 @@ import { getPassword, getUsername } from '../useLogin';
       <div>
         <h1>All Shows</h1>
       </div>
+      <button onClick={() => listVenues()}>List venues</button>
         <div className="deleteShows">
           <form id="delete-show">
             Delete Show:

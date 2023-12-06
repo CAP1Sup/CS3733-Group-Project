@@ -1,4 +1,5 @@
 //import { useState } from 'react'
+import { useEffect } from 'react';
 import '../App.css'
 import { instance, getInput } from '../main'
 import { getPassword, getUsername } from '../useLogin';
@@ -79,15 +80,17 @@ function venue_view() {
     .catch(console.error)*/
   }
 
+  //This line runs listVenues() when the page first loads
+  useEffect(()=>{
+    listVenues();
+  }, []);
+
   function deleteVenue() {
     //TODO: pass info from form to backend about deleting venue
     const email = getUsername();
     const password = getPassword();
     //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
     const venueName = (document.getElementById("delete-venue-list") as HTMLSelectElement).value;
-
-    // const email = "manager@gmail.com";
-    // const password = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5";
 
     console.log(venueName);
 
@@ -103,13 +106,7 @@ function venue_view() {
       console.log(error);
     });
 
-    //Construct JSON string from elements
-
-    //Make request and retrieve remaining info
-
-    //if failure, return error
-
-    //if success, change pages to venue view page
+ 
   }
 
   function activate_show() {
@@ -199,7 +196,7 @@ function venue_view() {
               <option>Show 2</option>
               <option>Show 3</option>
             </select></p>
-            <button name="activate-show">Activate Show</button>
+            <button onClick={() => activate_show()}>Activate Show</button>
           </form>
         </div>
         <div className="deleteShows">
