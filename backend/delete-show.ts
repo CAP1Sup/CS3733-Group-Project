@@ -29,7 +29,13 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const request: DeleteShowRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
-    if (!request.email || !request.passwd || !request.venue || !request.show || !request.time) {
+    if (
+        !request.hasOwnProperty("email") ||
+        !request.hasOwnProperty("passwd") ||
+        !request.hasOwnProperty("venue") ||
+        !request.hasOwnProperty("show") ||
+        !request.hasOwnProperty("time")
+    ) {
         return errorResponse("Malformed request, missing required field");
     }
 

@@ -26,7 +26,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const request: ListVenuesRequest = JSON.parse(event.body);
 
     // Check to make sure that all values are present
-    if (!request.email || !request.passwd) {
+    if (!request.hasOwnProperty("email") || !request.hasOwnProperty("passwd")) {
         return errorResponse("Malformed request, missing parameters");
     }
 

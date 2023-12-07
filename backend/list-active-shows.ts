@@ -17,7 +17,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Create a new transaction with the DB
         db = await beginTransaction();
 
-        // Get the venues that match the user's info
+        // Get the active venues
         const activeShowsJSON = await getActiveShowsJSON(db);
 
         // Commit the transaction
@@ -26,7 +26,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Close the DB connection
         await db.end();
 
-        // Return the user's venues
+        // Return the active venues
         return successResponse(activeShowsJSON);
     } catch (error) {
         // Roll back the transaction, there was an error

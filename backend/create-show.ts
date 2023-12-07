@@ -31,12 +31,12 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
 
     // Make sure that all required fields are present
     if (
-        !request.email ||
-        !request.passwd ||
-        !request.venue ||
-        !request.name ||
-        !request.time ||
-        !request.defaultPrice
+        !request.hasOwnProperty("email") ||
+        !request.hasOwnProperty("passwd") ||
+        !request.hasOwnProperty("venue") ||
+        !request.hasOwnProperty("name") ||
+        !request.hasOwnProperty("time") ||
+        !request.hasOwnProperty("defaultPrice")
     ) {
         return errorResponse("Malformed request, missing required field");
     }

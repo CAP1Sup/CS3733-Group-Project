@@ -27,7 +27,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const request: ShowAvailableSeatsRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
-    if (!request.venue || !request.show || !request.time) {
+    if (!request.hasOwnProperty("venue") || !request.hasOwnProperty("show") || !request.hasOwnProperty("time")) {
         return errorResponse("Malformed request, missing required field");
     }
 
