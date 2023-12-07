@@ -169,7 +169,69 @@ export async function getActiveShowsJSON(db: Connection) {
     });
 }
 
-export async function getShowJSON(venue: Venue, show: Show, db: Connection) {
+export async function getMatchingNamesJSON(query: string, db: Connection) {
+    // Pull all of the data from the DB
+    return new Promise<string>(async (resolve, reject) => {
+        try {
+            let venues: Venue[];
+
+            // Create an admin user to get all of the venues
+            // Quick hack to get all of the venues
+            const user = { id: 0, email: "", passwd: "", isAdmin: true };
+            venues = await getVenues(user, db);
+
+            // Get all of the shows for each venue
+            for (let i = 0; i < venues.length; i++) {
+                if (venues[i].id) {
+                    venues[i].shows = await getActiveShows(venues[i], db);
+                } else {
+                    reject("No venue ID in venue");
+                }
+            }
+
+            // Remove any venues or shows that don't match the query
+            // All shows are kept if the venue matches the query
+            for (let i = 0; i < venues.length; i++) {
+                if (!venues[i].name.toLowerCase().includes(query.toLowerCase())) {
+                    for (let j = 0; j < venues[i].shows.length; j++) {
+                        if (!venues[i].shows[j].name.toLowerCase().includes(query.toLowerCase())) {
+                            venues[i].shows.splice(j, 1);
+                            j--;
+                        }
+                    }
+                }
+            }
+
+            // Remove venues that don't have any shows
+            for (let i = 0; i < venues.length; i++) {
+                if (venues[i].shows.length === 0) {
+                    venues.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Remove the unneeded data
+            for (let i = 0; i < venues.length; i++) {
+                delete venues[i].id;
+                delete venues[i].sections;
+                if (venues[i].shows) {
+                    for (let j = 0; j < venues[i].shows.length; j++) {
+                        delete venues[i].shows[j].id;
+                        delete venues[i].shows[j].defaultPrice;
+                        delete venues[i].shows[j].active;
+                    }
+                } else {
+                    reject("No shows in venue");
+                }
+            }
+            return resolve(JSON.stringify(venues));
+        } catch (error) {
+            return reject(error);
+        }
+    });
+}
+
+export async function getSeatJSON(venue: Venue, show: Show, db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {
         try {

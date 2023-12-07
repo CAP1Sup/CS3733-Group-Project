@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { beginTransaction, createShow, getUser, getVenues, venueExists } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { Venue } from "./libs/db-types";
-import { getShowJSON } from "./libs/db-conv";
+import { getSeatJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
 interface CreateShowRequest {
@@ -79,7 +79,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         const show = await createShow(venue, request.name, new Date(request.time), request.defaultPrice, db);
 
         // Get the seating data for the show
-        const showJSON = await getShowJSON(venue, show, db);
+        const showJSON = await getSeatJSON(venue, show, db);
 
         // Commit the transaction
         await db.commit();

@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { beginTransaction, getShows, getVenues } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { Show, Venue } from "./libs/db-types";
-import { getShowJSON } from "./libs/db-conv";
+import { getSeatJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
 interface ShowAvailableSeatsRequest {
@@ -65,7 +65,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         }
 
         // Get the seating data for the show
-        const showJSON = await getShowJSON(venue, show, db);
+        const showJSON = await getSeatJSON(venue, show, db);
 
         // Commit the transaction
         await db.commit();
