@@ -252,6 +252,21 @@ export async function getShows(venue: Venue, db: Connection) {
     });
 }
 
+export async function getActiveShows(venue: Venue, db: Connection) {
+    return new Promise<Show[]>(async (resolve, reject) => {
+        if (!venue.id) {
+            return reject("No venue ID in venue");
+        }
+        try {
+            let [rows] = await db.execute("SELECT * FROM shows WHERE venueID=? AND active=1", [venue.id]);
+            rows = rows as RowDataPacket[];
+            return resolve(dbToShows(rows));
+        } catch (error) {
+            return reject("Database error getting shows: " + error);
+        }
+    });
+}
+
 export async function createShow(venue: Venue, name: string, date: Date, defaultPrice: number, db: Connection) {
     return new Promise<Show>(async (resolve, reject) => {
         if (!venue.id) {

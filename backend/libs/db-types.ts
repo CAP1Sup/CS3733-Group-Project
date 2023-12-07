@@ -25,7 +25,7 @@ export type Show = {
     name: string;
     time: Date;
     defaultPrice?: number;
-    active: boolean;
+    active?: boolean;
     seats?: Section[];
 };
 

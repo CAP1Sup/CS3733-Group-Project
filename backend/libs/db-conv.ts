@@ -1,5 +1,5 @@
 import { RowDataPacket } from "mysql2";
-import { getSeats, getShows, getVenues } from "./db-query";
+import { getActiveShows, getSeats, getShows, getVenues } from "./db-query";
 import { Block, Seat, Section, Show, User, Venue } from "./db-types";
 import { Connection } from "mysql2/promise";
 
@@ -85,37 +85,87 @@ export function dbToBlock(blockRows: RowDataPacket[]) {
 export async function getVenuesJSON(user: User, db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {
-        let venues: Venue[];
-
-        // Attempt to get the venues
         try {
+            let venues: Venue[];
+
+            // Get the venues that match the user's info
             venues = await getVenues(user, db);
+
+            // Get the shows for each venue
+            for (let i = 0; i < venues.length; i++) {
+                if (venues[i].id) {
+                    venues[i].shows = await getShows(venues[i], db);
+                } else {
+                    reject("No venue ID in venue");
+                }
+            }
+
+            // Remove the unneeded data
+            for (let i = 0; i < venues.length; i++) {
+                delete venues[i].id;
+                delete venues[i].sections;
+                if (venues[i].shows) {
+                    for (let j = 0; j < venues[i].shows.length; j++) {
+                        delete venues[i].shows[j].id;
+                        delete venues[i].shows[j].defaultPrice;
+                    }
+                } else {
+                    reject("No shows in venue");
+                }
+            }
+            return resolve(JSON.stringify(venues));
         } catch (error) {
             return reject(error);
         }
+    });
+}
 
-        for (let i = 0; i < venues.length; i++) {
-            if (venues[i].id) {
-                venues[i].shows = await getShows(venues[i], db);
-            } else {
-                reject("No venue ID in venue");
-            }
-        }
+export async function getActiveShowsJSON(db: Connection) {
+    // Pull all of the data from the DB
+    return new Promise<string>(async (resolve, reject) => {
+        try {
+            let venues: Venue[];
 
-        // Remove the unneeded data from the JSON
-        for (let i = 0; i < venues.length; i++) {
-            delete venues[i].id;
-            delete venues[i].sections;
-            if (venues[i].shows) {
-                for (let j = 0; j < venues[i].shows.length; j++) {
-                    delete venues[i].shows[j].id;
-                    delete venues[i].shows[j].defaultPrice;
+            // Create an admin user
+            // Quick hack to get all of the venues
+            const user = { id: 0, email: "", passwd: "", isAdmin: true };
+            venues = await getVenues(user, db);
+
+            // Get the active shows for each venue
+            for (let i = 0; i < venues.length; i++) {
+                if (venues[i].id) {
+                    venues[i].shows = await getActiveShows(venues[i], db);
+                } else {
+                    reject("No venue ID in venue");
                 }
-            } else {
-                reject("No shows in venue");
             }
+
+            // Remove venues that don't have any active shows
+            for (let i = 0; i < venues.length; i++) {
+                if (venues[i].shows.length === 0) {
+                    venues.splice(i, 1);
+                    i--;
+                }
+            }
+
+            // Remove the unneeded data
+            for (let i = 0; i < venues.length; i++) {
+                delete venues[i].id;
+                delete venues[i].sections;
+                if (venues[i].shows) {
+                    for (let j = 0; j < venues[i].shows.length; j++) {
+                        delete venues[i].shows[j].id;
+                        delete venues[i].shows[j].defaultPrice;
+                        delete venues[i].shows[j].active;
+                    }
+                } else {
+                    reject("No shows in venue");
+                }
+            }
+            return resolve(JSON.stringify(venues));
+        } catch (error) {
+            return reject(error);
         }
-        return resolve(JSON.stringify(venues));
     });
 }
 
