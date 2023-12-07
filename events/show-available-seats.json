@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"venue\":\"Alden Hall\",\"show\":\"Aladdin\",\"time\":\"2023-12-05T23:00:00.000Z\"}"
+}

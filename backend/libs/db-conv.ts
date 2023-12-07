@@ -126,7 +126,7 @@ export async function getActiveShowsJSON(db: Connection) {
         try {
             let venues: Venue[];
 
-            // Create an admin user
+            // Create an admin user to get all of the venues
             // Quick hack to get all of the venues
             const user = { id: 0, email: "", passwd: "", isAdmin: true };
             venues = await getVenues(user, db);
@@ -173,7 +173,16 @@ export async function getShowJSON(venue: Venue, show: Show, db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {
         try {
-            return resolve(JSON.stringify(await getSeats(venue, show, db)));
+            // Get the seats for the show
+            let seats = await getSeats(venue, show, db);
+
+            // Remove the unneeded data
+            for (let i = 0; i < seats.length; i++) {
+                delete seats[i].id;
+            }
+
+            // Return the simplified data
+            return resolve(JSON.stringify(seats));
         } catch (error) {
             return reject(error);
         }
