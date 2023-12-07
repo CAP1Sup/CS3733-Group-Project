@@ -16,7 +16,7 @@ Write-Host "CloudFront Distribution ID: $cloudfront_distribution_id"
 Write-Host "S3 Bucket Name: $s3_bucket_name"
 
 # Move to frontend and install
-cd frontend/
+Set-Location frontend/
 npm install
 
 # Delete the .env file if it exists
@@ -38,10 +38,10 @@ Get-Content ".env"
 npm run build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "The build failed - please check the error message above"
-    cd ..
+    Set-Location ..
     exit 1
 }
-cd dist/
+Set-Location dist/
 
 # Sync distribution with S3
 aws s3 sync . "s3://$s3_bucket_name/"
@@ -59,4 +59,4 @@ $cloudfront_domain_name = aws cloudfront list-distributions --query "Distributio
 Write-Host "The invalidation is now complete - please visit your cloudfront URL to test: $cloudfront_domain_name"
 
 # Return to root directory
-cd ../..
+Set-Location ../..
