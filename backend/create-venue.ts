@@ -90,8 +90,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         let user: User;
         try {
             user = await getUser(request.email, request.passwd, db);
-        } catch (error) {
-            if (error === "User doesn't exist") {
+        } catch (error: any) {
+            if ((error as string).includes("User doesn't exist")) {
                 user = await createUser(request.email, request.passwd, false, db);
             } else {
                 throw error;
