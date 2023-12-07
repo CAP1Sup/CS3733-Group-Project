@@ -503,6 +503,52 @@ export async function createSeats(venue: Venue, show: Show, db: Connection) {
     });
 }
 
+export async function purchaseSeat(show: Show, section: Section, row: number, column: number, db: Connection) {
+    return new Promise<Seat>(async (resolve, reject) => {
+        try {
+            // Query the database to see if the seat exists
+            let [rows] = await db.execute("SELECT * FROM seats WHERE showID=? AND sectionID=? AND `row`=? AND col=?", [
+                show.id,
+                section.id,
+                row,
+                column,
+            ]);
+
+            // Process the result
+            rows = rows as RowDataPacket[];
+            if (rows.length == 0) {
+                throw "Seat in " + section.name + ", row " + row + ", column " + column + " doesn't exist";
+            } else if (rows.length > 1) {
+                throw "Multiple seats found for the same section, row, and column";
+            }
+
+            // Convert the rows to a seat
+            let seat = dbToSeats(rows)[0];
+
+            // Make sure that the seat isn't already purchased
+            if (seat.purchased) {
+                throw "Seat in " + section.name + ", row " + row + ", column " + column + " is already purchased";
+            }
+
+            // Mark the seat as purchased
+            let [result] = await db.execute(
+                "UPDATE seats SET purchased=1 WHERE showID=? AND sectionID=? AND `row`=? AND col=?",
+                [show.id, section.id, row, column]
+            );
+            result = result as ResultSetHeader;
+            if (result.affectedRows == 0) {
+                throw "Unable to set seat in" + section.name + ", row " + row + ", column " + column + " as purchased";
+            }
+
+            // Return the updated show
+            seat.purchased = true;
+            return resolve(seat);
+        } catch (error) {
+            return reject("Database error purchasing seat: " + error);
+        }
+    });
+}
+
 export async function deleteSeats(show: Show, db: Connection) {
     return new Promise<Seat[]>(async (resolve, reject) => {
         try {

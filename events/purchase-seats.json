@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"venue\":\"Alden Hall\",\"show\":\"Aladdin\",\"time\":\"2023-12-05T23:00:00.000Z\",\"seats\":[{\"section\":0,\"row\":2,\"column\":0},{\"section\":1,\"row\":4,\"column\":1},{\"section\":2,\"row\":0,\"column\":1}]}"
+}
