@@ -46,19 +46,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Get the shows that match the venue
         let shows = await getShows(deletedVenue, db);
 
-        // Check if one of the shows is active
-        // Fail if there's an active show and the user isn't an admin
-        if (!user.isAdmin) {
-            for (let i = 0; i < shows.length; i++) {
-                if (shows[i].active) {
-                    throw "Cannot delete a venue with an active show";
-                }
-            }
-        }
-
         // Delete the shows that match the venue
         for (let i = 0; i < shows.length; i++) {
-            await deleteShow(deletedVenue, shows[i], db);
+            await deleteShow(user, deletedVenue, shows[i], db);
         }
 
         // Delete the sections that match the venue

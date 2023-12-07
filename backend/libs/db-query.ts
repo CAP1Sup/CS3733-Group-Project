@@ -330,7 +330,7 @@ export async function activateShow(venue: Venue, show: Show, db: Connection) {
     });
 }
 
-export async function deleteShow(venue: Venue, show: Show, db: Connection) {
+export async function deleteShow(user: User, venue: Venue, show: Show, db: Connection) {
     return new Promise<Show>(async (resolve, reject) => {
         try {
             let showToDelete: Show;
@@ -342,6 +342,13 @@ export async function deleteShow(venue: Venue, show: Show, db: Connection) {
                 throw "Show doesn't exist";
             }
             showToDelete = dbToShows(rows)[0];
+
+            // Check if the show is active
+            if (!user.isAdmin) {
+                if (showToDelete.active) {
+                    throw "Only administrators can delete an active show";
+                }
+            }
 
             // Delete the show
             let [result] = await db.execute("DELETE FROM shows WHERE ID=? AND venueID=?", [show.id, venue.id]);

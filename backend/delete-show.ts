@@ -74,13 +74,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
-        // Check if the user is authorized to delete the show
-        if (show.active && !user.isAdmin) {
-            throw "Only administrators can delete an active show";
-        }
-
         // Attempt to delete the show
-        await deleteShow(venue, show, db);
+        await deleteShow(user, venue, show, db);
 
         // Get the venues that match the user's info
         const venueJSON = await getVenuesJSON(user, db);
