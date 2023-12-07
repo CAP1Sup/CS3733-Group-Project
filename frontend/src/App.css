@@ -49,3 +49,7 @@ div.bigMan div{
 div.bigMan div a{
   color:pink;
 }
+.error-message {
+  color: red;
+  font-family: 'Courier New', Courier, monospace;
+}

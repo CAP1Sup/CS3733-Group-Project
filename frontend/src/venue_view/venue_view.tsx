@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import '../App.css'
 import { instance, getInput } from '../main'
 import { getPassword, getUsername } from '../useLogin';
+import { Await } from 'react-router-dom';
 
 
 /**
@@ -65,7 +66,11 @@ function venue_view() {
         edit_show_list.remove(edit_show_list.length - 1);
       }
       edit_show_list.innerHTML = showsStr;
-    })
+    }).catch((error) => {
+      const errorMessage = (document.getElementById('error-message') as HTMLDivElement);
+      errorMessage.innerHTML = error;
+      console.log(error);
+  });
 
     /*fetch('https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod/list-venues', {
       method: "POST",
@@ -83,6 +88,10 @@ function venue_view() {
   //This line runs listVenues() when the page first loads
   useEffect(()=>{
     listVenues();
+    //TODO: set "await" such that following code runs after listeVenues()
+    const errorMessage = (document.getElementById('error-message') as HTMLDivElement);
+    errorMessage.innerHTML = "";
+    console.log("grey")
   }, []);
 
   function deleteVenue() {
@@ -102,7 +111,10 @@ function venue_view() {
 
     instance.post("/delete-venue", data).then((response) => {
       console.log(response);
+      listVenues();
     }).catch((error) => {
+        const errorMessage = (document.getElementById('error-message') as HTMLDivElement);
+        errorMessage.innerHTML = error;
       console.log(error);
     });
 
@@ -130,7 +142,12 @@ function venue_view() {
     instance.post('/activate-show', data).then((response) => {
 
       console.log(response);
-    })
+      listVenues();
+    }).catch((error) => {
+      const errorMessage = (document.getElementById('error-message') as HTMLDivElement);
+      errorMessage.innerHTML = error;
+    console.log(error);
+  });
   }
 
   function delete_show() {
@@ -154,19 +171,28 @@ function venue_view() {
     instance.post('/delete-show', data).then((response) => {
 
       console.log(response);
-    })
+      listVenues();
+    }).catch((error) => {
+      const errorMessage = (document.getElementById('error-message') as HTMLDivElement);
+      errorMessage.innerHTML = error;
+    console.log(error);
+  });
   }
 
-  console.log("Venue View")
+  function handleCreateShow(): void {
+    const selectedVenue = (document.getElementById('create-show-venue-list') as HTMLSelectElement).value
+    
+  }
 
   return (
     <>
       <div>
         <h1>Venue View!</h1>
       </div>
+      <div id='error-message' className='error-message'></div>
       <button onClick={() => listVenues()}>List venues</button>
       <div className="venues">
-        <p><button>Create Venue</button></p>
+        <a href='create-venue'><p><button>Create Venue</button></p></a>
 
         <p><select name='Venue to be deleted' id="delete-venue-list">
           <option>Venue 1</option>
@@ -185,7 +211,7 @@ function venue_view() {
               <option>Venue 2</option>
               <option>Venue 3</option>
             </select></p>
-            <button name="create-show">Create Show</button>
+            <button name="create-show" onClick={(e)=>handleCreateShow()}>Create Show</button>
           </form>
         </div>
         <div className="activateShows">
