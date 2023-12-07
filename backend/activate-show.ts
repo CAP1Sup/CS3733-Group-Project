@@ -1,11 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { getVenuesJSON } from "./libs/db-conv";
-import { beginTransaction, deleteShow, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
+import { activateShow, beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
 import { Show, Venue } from "./libs/db-types";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { Connection } from "mysql2/promise";
 
-interface DeleteShowRequest {
+interface ActivateShowRequest {
     email: string;
     passwd: string;
     venue: string;
@@ -26,18 +26,12 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: DeleteShowRequest = JSON.parse(event.body);
+    const request: ActivateShowRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
     if (!request.email || !request.passwd || !request.venue || !request.show || !request.time) {
         return errorResponse("Malformed request, missing required field");
     }
-
-    // Make sure that the time is in the future
-    /*
-    if (request.time < new Date()) {
-        return errorResponse("Invalid time");
-    }*/
 
     // Start the DB connection
     // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
@@ -74,13 +68,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
-        // Check if the user is authorized to delete the show
-        if (show.active && !user.isAdmin) {
-            throw "Only administrators can delete an active show";
-        }
-
         // Attempt to delete the show
-        await deleteShow(venue, show, db);
+        await activateShow(venue, show, db);
 
         // Get the venues that match the user's info
         const venueJSON = await getVenuesJSON(user, db);

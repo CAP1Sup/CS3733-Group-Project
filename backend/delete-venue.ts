@@ -2,7 +2,6 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { deleteVenue, deleteSections, getUser, deleteShow, getShows, beginTransaction } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { getVenuesJSON } from "./libs/db-conv";
-import { User } from "./libs/db-types";
 import { Connection } from "mysql2/promise";
 
 interface DeleteVenueRequest {
@@ -44,14 +43,26 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Attempt to delete the venues that match the user's info
         const deletedVenue = (await deleteVenue(request.venue, user, db))[0];
 
-        // Delete the sections that match the venue
-        await deleteSections(deletedVenue, db);
+        // Get the shows that match the venue
+        let shows = await getShows(deletedVenue, db);
+
+        // Check if one of the shows is active
+        // Fail if there's an active show and the user isn't an admin
+        if (!user.isAdmin) {
+            for (let i = 0; i < shows.length; i++) {
+                if (shows[i].active) {
+                    throw "Cannot delete a venue with an active show";
+                }
+            }
+        }
 
         // Delete the shows that match the venue
-        let shows = await getShows(deletedVenue, db);
         for (let i = 0; i < shows.length; i++) {
             await deleteShow(deletedVenue, shows[i], db);
         }
+
+        // Delete the sections that match the venue
+        await deleteSections(deletedVenue, db);
 
         // Get the venues that match the user's info
         const venueJSON = await getVenuesJSON(user, db);

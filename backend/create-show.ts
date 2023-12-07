@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { beginTransaction, createShow, getUser, getVenues, venueExists } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
-import { User, Venue } from "./libs/db-types";
+import { Venue } from "./libs/db-types";
 import { getShowJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 

@@ -1,5 +1,5 @@
 import { RowDataPacket } from "mysql2";
-import { getSeats, getShows, getUser, getVenues } from "./db-query";
+import { getSeats, getShows, getVenues } from "./db-query";
 import { Block, Seat, Section, Show, User, Venue } from "./db-types";
 import { Connection } from "mysql2/promise";
 

@@ -29,9 +29,9 @@ export async function getUser(email: string, passwd: string, db: Connection) {
             // Check if the user exists
             rows = rows as RowDataPacket[];
             if (rows.length < 1) {
-                return reject("User doesn't exist");
+                throw "User doesn't exist";
             } else if (rows.length > 1) {
-                return reject("Multiple users with the same email and password");
+                throw "Multiple users with the same email and password";
             }
 
             // Return the user
@@ -66,7 +66,7 @@ export async function createUser(email: string, passwd: string, isAdmin: boolean
             }
 
             // No rows were updated, error
-            return reject("No rows updated when creating user");
+            throw "No rows updated when creating user";
         } catch (error: any) {
             if (error.hasOwnProperty("code")) {
                 if (error.code == "ER_DUP_ENTRY") {
@@ -84,7 +84,7 @@ export async function getSections(venueID: number, db: Connection) {
             let [rows] = await db.execute("SELECT * FROM sections WHERE venueID=?", [venueID]);
             rows = rows as RowDataPacket[];
             if (rows.length == 0) {
-                return reject("No sections for that venue");
+                throw "No sections for that venue";
             }
             return resolve(dbToSections(rows));
         } catch (error) {
@@ -111,7 +111,7 @@ export async function createSection(venue: Venue, name: string, rows: number, co
             if (result.affectedRows == 1) {
                 return resolve(result.insertId);
             }
-            return reject("No rows updated when creating section");
+            throw "No rows updated when creating section";
         } catch (error) {
             return reject("Database error creating section: " + error);
         }
@@ -132,7 +132,7 @@ export async function deleteSections(venue: Venue, db: Connection) {
             if (result.affectedRows > 0) {
                 return resolve(sectionsToDelete);
             }
-            return reject("Unable to delete sections");
+            throw "Unable to delete sections";
         } catch (error) {
             return reject("Database error deleting sections: " + error);
         }
@@ -164,7 +164,7 @@ export async function venueExists(venueName: string, db: Connection) {
             let [rows] = await db.execute("SELECT * FROM venues WHERE name=?", [venueName]);
             rows = rows as RowDataPacket[];
             if (rows.length == 0) {
-                return reject("Venue doesn't exist");
+                throw "Venue doesn't exist";
             }
             return resolve(true);
         } catch (error) {
@@ -186,7 +186,7 @@ export async function createVenue(name: string, user: User, db: Connection) {
                     shows: [],
                 });
             }
-            return reject("No rows updated when creating venue");
+            throw "No rows updated when creating venue";
         } catch (error: any) {
             if (error.hasOwnProperty("code")) {
                 if (error.code == "ER_DUP_ENTRY") {
@@ -213,13 +213,13 @@ export async function deleteVenue(venueName: string, user: User, db: Connection)
                 if (result.affectedRows > 0) {
                     return resolve(venuesToDelete);
                 }
-                return reject("Unable to delete venue");
+                throw "Unable to delete venue";
             } else {
                 // Check if the user is authorized for the given venue
                 let [rows] = await db.execute("SELECT * FROM venues WHERE name=? AND userID=?", [venueName, user.id]);
                 rows = rows as RowDataPacket[];
                 if (rows.length == 0) {
-                    return reject("You're not authorized to make modifications to that venue");
+                    throw "You're not authorized to make modifications to that venue";
                 }
                 venuesToDelete = dbToVenues(rows);
 
@@ -229,7 +229,7 @@ export async function deleteVenue(venueName: string, user: User, db: Connection)
                 if (result.affectedRows > 0) {
                     return resolve(venuesToDelete);
                 }
-                return reject("Unable to delete venue");
+                throw "Unable to delete venue";
             }
         } catch (error) {
             return reject("Database error deleting venue: " + error);
@@ -267,7 +267,7 @@ export async function createShow(venue: Venue, name: string, date: Date, default
             ]);
             rows = rows as RowDataPacket[];
             if (rows.length > 0) {
-                return reject("Show already exists");
+                throw "Show already exists";
             }
 
             // Create the show
@@ -287,10 +287,10 @@ export async function createShow(venue: Venue, name: string, date: Date, default
             ]);
             result = result as ResultSetHeader;
             if (result.affectedRows == 0) {
-                return reject("No rows updated when creating show");
+                throw "No rows updated when creating show";
             }
             if (!result.insertId) {
-                return reject("No ID returned when creating show");
+                throw "No ID returned when creating show";
             }
             show.id = result.insertId;
 
@@ -304,6 +304,32 @@ export async function createShow(venue: Venue, name: string, date: Date, default
     });
 }
 
+export async function activateShow(venue: Venue, show: Show, db: Connection) {
+    return new Promise<Show>(async (resolve, reject) => {
+        try {
+            // Check if the show exists
+            let [rows] = await db.execute("SELECT * FROM shows WHERE ID=? AND venueID=?", [show.id, venue.id]);
+            rows = rows as RowDataPacket[];
+            if (rows.length == 0) {
+                throw "Show doesn't exist";
+            }
+
+            // Activate the show
+            let [result] = await db.execute("UPDATE shows SET active=1 WHERE ID=? AND venueID=?", [show.id, venue.id]);
+            result = result as ResultSetHeader;
+            if (result.affectedRows == 0) {
+                throw "Unable to activate show";
+            }
+
+            // Return the updated show
+            show.active = true;
+            return resolve(show);
+        } catch (error) {
+            return reject("Database error activating show: " + error);
+        }
+    });
+}
+
 export async function deleteShow(venue: Venue, show: Show, db: Connection) {
     return new Promise<Show>(async (resolve, reject) => {
         try {
@@ -313,7 +339,7 @@ export async function deleteShow(venue: Venue, show: Show, db: Connection) {
             let [rows] = await db.execute("SELECT * FROM shows WHERE ID=? AND venueID=?", [show.id, venue.id]);
             rows = rows as RowDataPacket[];
             if (rows.length == 0) {
-                return reject("Show doesn't exist");
+                throw "Show doesn't exist";
             }
             showToDelete = dbToShows(rows)[0];
 
@@ -323,7 +349,7 @@ export async function deleteShow(venue: Venue, show: Show, db: Connection) {
             // Process the result
             result = result as ResultSetHeader;
             if (result.affectedRows == 0) {
-                return reject("Unable to delete show");
+                throw "Unable to delete show";
             }
 
             // Delete the show's seats
@@ -334,7 +360,7 @@ export async function deleteShow(venue: Venue, show: Show, db: Connection) {
 
             // Return the deleted show
             if (!showToDelete) {
-                return reject("Show to delete is undefined");
+                throw "Show to delete is undefined";
             }
             return resolve(showToDelete);
         } catch (error) {
@@ -355,7 +381,7 @@ export async function getSeats(venue: Venue, show: Show, db: Connection) {
             const sections = await getSections(venue.id, db);
             for (let i = 0; i < sections.length; i++) {
                 if (!sections[i].id) {
-                    return reject("No section ID in section");
+                    throw "No section ID in section";
                 }
 
                 // Get the seats for the section
@@ -409,7 +435,7 @@ export async function createSeats(venue: Venue, show: Show, db: Connection) {
             // Create the seats
             for (let i = 0; i < venue.sections.length; i++) {
                 if (!venue.sections[i].id) {
-                    return reject("No section ID in section");
+                    throw "No section ID in section";
                 }
 
                 // Check to make sure that the seats don't already exist
@@ -419,7 +445,7 @@ export async function createSeats(venue: Venue, show: Show, db: Connection) {
                 ]);
                 rows = rows as RowDataPacket[];
                 if (rows.length > 0) {
-                    return reject("Seats already exist");
+                    throw "Seats already exist";
                 }
 
                 // Create the seats in the database
@@ -432,7 +458,7 @@ export async function createSeats(venue: Venue, show: Show, db: Connection) {
                         );
                         result = result as ResultSetHeader;
                         if (result.affectedRows == 0) {
-                            return reject("Unable to create seats in database");
+                            throw "Unable to create seats in database";
                         }
 
                         // TODO: Fix this properly
@@ -471,7 +497,7 @@ export async function deleteSeats(show: Show, db: Connection) {
             if (result.affectedRows > 0) {
                 return resolve(seatsToDelete);
             }
-            return reject("Unable to delete seats");
+            throw "Unable to delete seats";
         } catch (error) {
             return reject("Database error deleting seats: " + error);
         }
@@ -501,7 +527,7 @@ export async function getBlocks(seats: Seat[], db: Connection) {
             for (let i = 0; i < seats.length; i++) {
                 const block = blocks.find((block) => block.id === seats[i].blockId);
                 if (!block) {
-                    return reject("No block found for seat: " + seats[i]);
+                    throw "No block found for seat: " + seats[i];
                 }
                 seats[i].block = block;
                 delete seats[i].blockId;
@@ -525,7 +551,7 @@ export async function createBlock(block: Block, db: Connection) {
             let [rows] = await db.execute("SELECT * FROM blocks WHERE showID=? AND name=?", [block.showID, block.name]);
             rows = rows as RowDataPacket[];
             if (rows.length > 0) {
-                return reject("Block already exists");
+                throw "Block already exists";
             }
 
             // Create the block in the database
@@ -539,7 +565,7 @@ export async function createBlock(block: Block, db: Connection) {
                 block.id = result.insertId;
                 return resolve(block);
             }
-            return reject("No rows updated when creating block");
+            throw "No rows updated when creating block";
         } catch (error) {
             return reject("Database error creating a block: " + error);
         }
@@ -556,7 +582,7 @@ export async function deleteBlocks(show: Show, db: Connection) {
 
             // Make sure that we have at least one
             if (blocksToDelete.length == 0) {
-                return reject("No blocks to delete");
+                throw "No blocks to delete";
             }
 
             // Delete the blocks
@@ -567,7 +593,7 @@ export async function deleteBlocks(show: Show, db: Connection) {
             if (result.affectedRows > 0) {
                 return resolve(blocksToDelete);
             }
-            return reject("Unable to delete blocks");
+            throw "Unable to delete blocks";
         } catch (error) {
             return reject("Database error deleting blocks: " + error);
         }
