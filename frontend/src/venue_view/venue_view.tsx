@@ -3,6 +3,8 @@ import { useEffect } from "react";
 import "../App.css";
 import { instance, getInput, getSelect } from "../main";
 import { getPassword, getUsername } from "../useLogin";
+import { AxiosResponse } from "axios";
+import { Link } from "react-router-dom";
 //import { Await } from "react-router-dom";
 
 /**
@@ -11,9 +13,28 @@ import { getPassword, getUsername } from "../useLogin";
  */
 
 export default function VenueView() {
-    //const [count, setCount] = useState(0)
+    var exportVenue = {venue: ""};
+    var exportShow = {venue: "", show: "", time: ""};
 
     function listVenues() {
+        function getItemName(object : any): string {
+            return object.name;
+        }
+        function getShowTime(object: any): string {
+            return (new Date(object.time)).toUTCString();
+        }
+        
+        function createOptionsList(data : any, selectedItem : string, get : Function){
+            let optionsArray = data.map(get);
+            optionsArray = optionsArray.filter((n : string, i : number) => optionsArray.indexOf(n) === i);
+            let optionString = "";
+            for (const option of optionsArray) {
+                optionString += "<option>" + option + "</option>";
+            }
+            let optionIndex = optionsArray.indexOf(selectedItem)
+            return [optionString, optionIndex];
+        }
+
         const email = getUsername();
         const password = getPassword();
 
@@ -40,32 +61,54 @@ export default function VenueView() {
                 //else -> refresh shows list
                 //else -> refresh venues
 
-                let venuesStr = "";
-                let showsStr = "";
-
                 const venueMenu = document.getElementById('venue-list') as HTMLSelectElement;
                 const showMenu = document.getElementById('show-list') as HTMLSelectElement;
                 const timeMenu = document.getElementById('time-list') as HTMLSelectElement;
 
+                console.log("e")
 
-                console.log(response.data.venue);
-                let venueArray = new Array();
-                let venueString = "";
-                for (const venue of response.data) {
-                    venueArray.push(venue.name);
-                    venueString += "<option>" + venue.name + "</option>";
-                }
+                console.log(response.data);
+                let [venueString, venueIndex] = createOptionsList(response.data, selectedVenue, getItemName);
                 venueMenu.innerHTML = venueString;
-                if (!(selectedVenue in venueArray)) {
+                if (venueIndex === -1) {
+                    showMenu.style.display = "none";
                     showMenu.innerHTML = "";
-                    return;
-                }
-                if (!(selectedShow in showMenu)){
+                    timeMenu.style.display = "none";
                     timeMenu.innerHTML = "";
                     return;
                 }
+                
+                showMenu.style.display = "inline";
+                timeMenu.style.display = "inline";
+                //Selected venue still exists in list, reselect and then move on
 
+                venueMenu.selectedIndex = venueIndex;
+                exportVenue.venue = getSelect('venue-list');
+                exportShow.venue = getSelect('venue-list');
+                
 
+                let [showString, showIndex] = createOptionsList(response.data[venueIndex].shows, selectedShow, getItemName);
+                console.log(showIndex)
+                showMenu.innerHTML = showString;
+                if (showIndex === -1) {
+                    timeMenu.style.display = "none";
+                    timeMenu.innerHTML = "";
+                    return;
+                }
+                timeMenu.style.display = "inline";
+                showMenu.selectedIndex = showIndex;
+                exportShow.show = getSelect('show-list')
+                
+                let times = response.data[venueIndex].shows.filter((item : any)=>{return item.name === selectedShow;});
+                console.log(times);
+                let [timeString, timeIndex] = createOptionsList(times, selectedTime, getShowTime);
+                timeMenu.innerHTML = timeString;
+                if (timeIndex === -1){
+                    return;
+                }
+                timeMenu.selectedIndex = timeIndex;
+                exportShow.time = getSelect('time-list')
+                return;
             })
             .catch((error) => {
                 const errorMessage = document.getElementById("error-message") as HTMLDivElement;
@@ -90,7 +133,7 @@ export default function VenueView() {
         //TODO: pass info from form to backend about deleting venue
         const email = getUsername();
         const password = getPassword();
-        const venueName = (document.getElementById("delete-venue-list") as HTMLSelectElement).value;
+        const venueName = (document.getElementById("venue-list") as HTMLSelectElement).value;
 
         console.log(venueName);
 
@@ -118,16 +161,14 @@ export default function VenueView() {
         const password = getPassword();
         const showName = getSelect('show-list');
         const venue = getSelect("venue-list");
-        const showDate = getInput("show-date");
-        const showTime = getInput("show-time");
-        const combinedDate = new Date(showDate + "T" + showTime);
+        const time = new Date(getSelect("time-list"))
 
         const data = {
             email: email,
             passwd: password,
             venue: venue,
             show: showName,
-            time: combinedDate,
+            time: time,
         };
         //make request
         instance
@@ -148,7 +189,7 @@ export default function VenueView() {
         const password = getPassword();
         const showName = getSelect('show-list');
         const venue = getSelect("venue-list");
-        const combinedDate = getSelect('time-list')
+        const combinedDate = new Date(getSelect('time-list'))
 
         const data = {
             email: email,
@@ -170,30 +211,17 @@ export default function VenueView() {
                 console.log(error);
             });
     }
-
-    function createShowForward(): void {
-        // TODO: Finish writing
-        //const selectedVenue = (document.getElementById("create-show-venue-list") as HTMLSelectElement).value;
-    }
-
-    function editShowForward(): void {
-        const showName = getSelect('show-list');
-        const venue = getSelect("venue-list");
-
-    }
     function generate_show_report() {
         const email = getUsername();
         const password = getPassword();
-        const showName = (document.getElementById("generate-show-list") as HTMLSelectElement).value;
-        const venue = getInput("show-venue-name");
-        const showDate = getInput("show-date");
-        const showTime = getInput("show-time");
-        const combinedDate = new Date(showDate + "T" + showTime);
+        const venueName = getSelect('venue-list');
+        const showName = getSelect('show-list');
+        const combinedDate = new Date(getSelect('time-list'));
 
         const data = {
             email: email,
             passwd: password,
-            venue: venue,
+            venue: venueName,
             show: showName,
             time: combinedDate,
         };
@@ -201,6 +229,10 @@ export default function VenueView() {
         instance.post("/generate-show-report", data).then((response) => {
 
             console.log(response);
+            return response;
+        }).catch((error)=>{
+            console.log(error);
+            return error;
         });
     }
 
@@ -212,31 +244,32 @@ export default function VenueView() {
             <div id="error-message" className="error-message"></div>
 
             <div className="venues">
-                <a href="create-venue"><button>Create Venue</button></a>
-                <a href="create-show"><button>Create Show</button></a>
+                <Link to="/create-venue"><button>Create Venue</button></Link>
+                <Link to="/create-show" state={exportVenue}><button>Create Show</button></Link>
                 <p>
-                    <select name="Venues" id="venue-list" size={6}>
+                    <select name="Venues" id="venue-list" size={6} onChange={()=>listVenues()}>
                         <option>Venue 1</option>
                         <option>Venue 2</option>
                         <option>Venue 3</option>
                     </select>
-                    <select name="Show" id="show-list" size={6}>
+                    <select name="Show" id="show-list" size={6} onChange={()=>listVenues()}>
                         <option>Show 1</option>
                         <option>Show 2</option>
                         <option>Show 3</option>
                     </select>
-                    <select name="Times" id="time-list" size={6}>
-                        <option>Show 1</option>
-                        <option>Show 2</option>
-                        <option>Show 3</option>
+                    <select name="Times" id="time-list" size={6} onChange={()=>listVenues()}>
+                        <option>Time 1</option>
+                        <option>Time 2</option>
+                        <option>Time 3</option>
                     </select>
                 </p>
                 <button onClick={() => deleteVenue()}>Delete Venue</button>
                 <button onClick={() => activate_show()}>Activate Show</button>
                 <button onClick={() => delete_show()}>Delete Show</button>
-                <button onClick={() => editShowForward()} name="edit-show">Edit Show</button>
-                <a href="show_report"><button onClick={() => generate_show_report()}>Generate Show Report</button></a>
+                <Link to="/edit-show" state={exportShow}><button>Edit Show</button></Link>
+                <Link to="/show-report" state={exportShow}><button>Generate Show Report</button></Link>
             </div>
         </>
     );
 }
+

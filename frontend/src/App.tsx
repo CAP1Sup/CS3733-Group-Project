@@ -49,12 +49,13 @@ export default function App() {
     if (!getUsername() || !getPassword()) {
         return (
             <>
-            <Login />
-                {/* <Router>
-                    <Route path="/buy-tickets" element={<BuyTickets />} />
-                    <Route path="/active-shows" element={<ActiveShows />} />
-                    <Route path="/" element={<Login />} />
-                </Router> */}
+                <Router>
+                    <Routes>
+                        <Route path="/buy-tickets" element={<BuyTickets />} />
+                        <Route path="/active-shows" element={<ActiveShows />} />
+                        <Route path="/" element={<Login />} />
+                    </Routes>
+                </Router>
             </>
         );
     }
@@ -72,7 +73,7 @@ export default function App() {
                     <Route path="/create-show" element={<CreateShow />} />
                     <Route path="/create-venue" element={<CreateVenue />} />
                     <Route path="/login" element={<Login />} />
-                    
+                    <Route path="/show-report" element={<ShowReport />} />
                 </Routes>
             </Router>
         </>

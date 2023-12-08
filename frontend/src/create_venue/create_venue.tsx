@@ -47,6 +47,7 @@ export default function CreateVenue(){
 
         instance.post("/create-venue", data).then((response) => {
           console.log(response);
+          window.location.href = "/venue-view"
         }).catch((error) => {
           const errorMessage = document.getElementById("error-message") as HTMLDivElement;
           errorMessage.innerHTML = error;

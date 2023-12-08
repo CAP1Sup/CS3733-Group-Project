@@ -1,7 +1,9 @@
 import {instance, getInput} from '../main'
 import { getPassword, getUsername } from '../useLogin';
+import { useLocation } from 'react-router-dom';
 
 export default function CreateShow(){
+  const location = useLocation();
     
     function createShow() {
         //TODO: pass info to backend about the show
@@ -12,13 +14,16 @@ export default function CreateShow(){
         const showTime = getInput("show-time");
         const combinedDate = new Date(showDate + "T" + showTime);
         const rawShowPrice = getInput("show-default-price")
+        console.log(location);
+        console.log(location.state);
+        console.log(location.state.venue);
         let showPrice = 10;
         if(rawShowPrice != ""){
           showPrice = parseFloat(rawShowPrice);
         }
     
         const showName = getInput("show-name");
-        const venue = getInput("show-venue-name");
+        const venue = location.state.venue;
     
         const data = {
           "email": email,
@@ -55,8 +60,6 @@ export default function CreateShow(){
                 <input type='text' id='show-name' />
                 {/* <input type='file' value='Image'/> */}
                 {/* TODO: this button should pass an image back to the  */}
-                Venue Name:
-                <input type='text' id='show-venue-name' />
                 <button onClick={() => createShow()}>Create Show</button>
 
             </div>

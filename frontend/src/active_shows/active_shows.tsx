@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import "../App.css";
 import {instance, getInput } from "../main";
 import { useEffect } from "react";
@@ -49,6 +50,10 @@ export default function ActiveShows() {
         });
     }
 
+    useEffect(() => {
+        list_active_shows();
+    }, []);
+
 
     return (
         <>
@@ -63,7 +68,7 @@ export default function ActiveShows() {
                 </select>
                 <button onClick={(e) => {e.preventDefault(); list_active_shows()}}>Active Shows</button>
          
-            <a href="buy-tickets"><button>Select Seats</button></a>
+            <Link to="/buy-tickets"><button>Select Seats</button></Link>
             </div>
             <input id="search" type="text" />
             <button onClick={(e)=>search_shows()}>Search</button>
