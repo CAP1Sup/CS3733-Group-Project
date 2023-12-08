@@ -22,7 +22,7 @@ function TestingHomePage() {
                     <a href="/all-shows">All Shows</a>
                 </div>
                 <div>
-                    <a href="/venue-view">VenueView</a>
+                    <a href="/venue-view">Venue View</a>
                 </div>
                 <div>
                     <a href="/create-show">Create Show</a>

@@ -1,0 +1,142 @@
+/* venue_view.css */
+
+body {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+.createvenueButton {
+    cursor: pointer;
+    background-color: #000000;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+}
+
+.createshowButton {
+    cursor: pointer;
+    background-color: #000000;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.deleteVenueButton {
+    cursor: pointer;
+    background-color: #f80808;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+}
+
+.activateShowButton {
+    cursor: pointer;
+    background-color: #000000;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+.deleteShowButton {
+    cursor: pointer;
+    background-color: #f80808;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+.editshowButton {
+    cursor: pointer;
+    background-color: #000000;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+.generateShowButton {
+    cursor: pointer;
+    background-color: #19a122;
+    color: #fff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    margin-top: 10px;
+    margin-left: 20px;
+}
+
+.deleteVenueButton:hover {
+    background-color: #fa7b7b;
+}
+
+.activateShowButton:hover {
+    background-color: #8b8b8b;
+}
+
+.deleteShowButton:hover {
+    background-color: #fa7b7b;
+}
+
+.createvenueButton:hover {
+    background-color: #8b8b8b;
+}
+
+.createshowButton:hover {
+    background-color: #8b8b8b;
+}
+
+.editshowButton:hover {
+    background-color: #8b8b8b;
+}
+
+.generateShowButton:hover {
+    background-color: #6a9361;
+}
+
+/* Responsive styling */
+@media (max-width: 600px) {
+    select,
+    button {
+        width: calc(100% - 16px);
+        max-width: 300px;
+    }
+}

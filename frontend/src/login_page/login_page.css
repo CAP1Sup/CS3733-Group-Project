@@ -1,0 +1,104 @@
+/* login_page.css */
+
+body {
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.container {
+    max-width: 400px;
+    background: #c8c8c8;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    text-align: center;
+    color: #000000;
+    margin-bottom: 35px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.consumerButton {
+    flex: 1;
+    cursor: pointer;
+    background-color: #;
+    color: #fff;
+    padding: 15px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+.consumerButton:hover {
+    background-color: #828282;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+form input {
+    width: 300px;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1.5px solid #9f9f9f;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.usernameInput,
+.passwordInput {
+    width: 80%;
+}
+
+.loginButton {
+    background-color: #000000;
+    color: #fff;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.loginButton:hover {
+    background-color: #828282;
+}
+
+.logoutButton {
+    background-color: #000000;
+    color: #fff;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.logoutButton:hover {
+    background-color: #828282;
+}
+
+/* Responsive styling */
+@media (max-width: 600px) {
+    .container {
+        width: 80%;
+    }
+}

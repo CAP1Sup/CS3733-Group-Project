@@ -1,7 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
-import "./index.css";
 import axios from "axios";
 import { getPassword, getUsername } from "./useLogin.tsx";
 
@@ -27,7 +26,7 @@ export function getItemName(object: any): string {
     return object.name;
 }
 export function getShowTime(object: any): string {
-    return (new Date(object.time)).toUTCString();
+    return new Date(object.time).toUTCString();
 }
 
 export function createOptionsList(data: any, selectedItem: string, get: Function) {
@@ -37,7 +36,7 @@ export function createOptionsList(data: any, selectedItem: string, get: Function
     for (const option of optionsArray) {
         optionString += "<option>" + option + "</option>";
     }
-    let optionIndex = optionsArray.indexOf(selectedItem)
+    const optionIndex = optionsArray.indexOf(selectedItem);
     return [optionString, optionIndex];
 }
 
@@ -45,19 +44,17 @@ export type Show = {
     venue: string;
     show: string;
     time: string;
-}
+};
 
 //TODO: fix this function cuz it's not good with expotrS
 export function updateSelectedShow() {
     return new Promise<Show>((resolve, reject) => {
-
         const email = getUsername();
         const password = getPassword();
 
-        const selectedVenue = getSelect('venue-list');
-        const selectedShow = getSelect('show-list');
-        const selectedTime = getSelect('time-list');
-
+        const selectedVenue = getSelect("venue-list");
+        const selectedShow = getSelect("show-list");
+        const selectedTime = getSelect("time-list");
 
         const data = {
             email: email,
@@ -67,7 +64,7 @@ export function updateSelectedShow() {
         instance
             .post("/list-venues", data)
             .then((response) => {
-                let exportShow: Show = { venue: "", show: "", time: "" };
+                const exportShow: Show = { venue: "", show: "", time: "" };
                 console.log(response);
                 //for each venue, create <option> element
 
@@ -78,14 +75,14 @@ export function updateSelectedShow() {
                 //else -> refresh shows list
                 //else -> refresh venues
 
-                const venueMenu = document.getElementById('venue-list') as HTMLSelectElement;
-                const showMenu = document.getElementById('show-list') as HTMLSelectElement;
-                const timeMenu = document.getElementById('time-list') as HTMLSelectElement;
+                const venueMenu = document.getElementById("venue-list") as HTMLSelectElement;
+                const showMenu = document.getElementById("show-list") as HTMLSelectElement;
+                const timeMenu = document.getElementById("time-list") as HTMLSelectElement;
 
-                console.log("e")
+                console.log("e");
 
                 console.log(response.data);
-                let [venueString, venueIndex] = createOptionsList(response.data, selectedVenue, getItemName);
+                const [venueString, venueIndex] = createOptionsList(response.data, selectedVenue, getItemName);
                 venueMenu.innerHTML = venueString;
                 console.log(selectedVenue);
                 if (venueIndex === -1) {
@@ -101,10 +98,14 @@ export function updateSelectedShow() {
                 //Selected venue still exists in list, reselect and then move on
 
                 venueMenu.selectedIndex = venueIndex;
-                exportShow.venue = getSelect('venue-list');
+                exportShow.venue = getSelect("venue-list");
 
-                let [showString, showIndex] = createOptionsList(response.data[venueIndex].shows, selectedShow, getItemName);
-                console.log(showIndex)
+                const [showString, showIndex] = createOptionsList(
+                    response.data[venueIndex].shows,
+                    selectedShow,
+                    getItemName
+                );
+                console.log(showIndex);
                 showMenu.innerHTML = showString;
                 if (showIndex === -1) {
                     timeMenu.style.display = "none";
@@ -113,17 +114,19 @@ export function updateSelectedShow() {
                 }
                 timeMenu.style.display = "inline";
                 showMenu.selectedIndex = showIndex;
-                exportShow.show = getSelect('show-list');
+                exportShow.show = getSelect("show-list");
 
-                let times = response.data[venueIndex].shows.filter((item: any) => { return item.name === selectedShow; });
+                const times = response.data[venueIndex].shows.filter((item: any) => {
+                    return item.name === selectedShow;
+                });
                 console.log(times);
-                let [timeString, timeIndex] = createOptionsList(times, selectedTime, getShowTime);
+                const [timeString, timeIndex] = createOptionsList(times, selectedTime, getShowTime);
                 timeMenu.innerHTML = timeString;
                 if (timeIndex === -1) {
                     reject("Time not found in list");
                 }
                 timeMenu.selectedIndex = timeIndex;
-                exportShow.time = getSelect('time-list');
+                exportShow.time = getSelect("time-list");
                 resolve(exportShow);
             })
             .catch((error) => {

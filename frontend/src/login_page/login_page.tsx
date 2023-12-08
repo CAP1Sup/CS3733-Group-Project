@@ -1,10 +1,9 @@
-// import '../App.css'
 import { getInput } from "../main";
 import PropTypes from "prop-types";
 import { savePassword, saveUsername } from "../useLogin";
+import "./login_page.css";
 
 export default function Login() {
-
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
         saveUsername(getInput("username"));
@@ -12,33 +11,44 @@ export default function Login() {
         window.location.href = "/venue-view";
     };
 
-    function LogOut(){
-      saveUsername('');
-      savePassword('');
-
+    function LogOut() {
+        saveUsername("");
+        savePassword("");
     }
 
     return (
         <>
+            <h1 className="header">BigTicket Login:</h1>
             <div>
-                <h1>Login Page!</h1>
-                <button onClick={() => (window.location.href = "/active-shows")}>I am a consumer</button>
+                <button className="consumerButton" onClick={() => (window.location.href = "/active-shows")}>
+                    I am a consumer
+                </button>
             </div>
             <form onSubmit={handleSubmit} id="loginForm">
                 <label>
-                    <p>Username</p>
-                    <input type="text" name="Username" id="username" required />
+                    <p></p>
+                    <input type="text" name="Username" id="username" placeholder="Username" required />
                 </label>
                 <label>
-                    <p>Password</p>
-                    <input type="password" name="pwd" id="pwd" required />
+                    <p></p>
+                    <input type="password" name="pwd" id="pwd" placeholder="Password" required />
                 </label>
                 <p>
-                    <button type="submit">Submit</button>
+                    <button className="loginButton" type="submit">
+                        Login
+                    </button>
                 </p>
             </form>
             <div>
-              <button onClick={() => {LogOut();window.location.href="/"}}>Log Out</button>
+                <button
+                    className="logoutButton"
+                    onClick={(e) => {
+                        LogOut();
+                        window.location.href = "/";
+                    }}
+                >
+                    Log Out
+                </button>
             </div>
         </>
     );
