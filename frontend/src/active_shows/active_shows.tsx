@@ -1,5 +1,6 @@
 import "../App.css";
 import {instance, getInput } from "../main";
+import { useEffect } from "react";
 
 export default function ActiveShows() {
     
@@ -48,18 +49,21 @@ export default function ActiveShows() {
         });
     }
 
+
     return (
         <>
             <div>
                 <h1>Active Shows</h1>
             </div>
             <div className="activeShows">
-                <select name="Active Shows" id="active-show-list">
+                <select name="View Active Shows" id="active-show-list">
                 <option>Show 1</option>
                 <option>Show 2</option>
                 <option>Show 3</option>
                 </select>
                 <button onClick={(e) => {e.preventDefault(); list_active_shows()}}>Active Shows</button>
+         
+            <a href="buy-tickets"><button>Select Seats</button></a>
             </div>
             <input id="search" type="text" />
             <button onClick={(e)=>search_shows()}>Search</button>

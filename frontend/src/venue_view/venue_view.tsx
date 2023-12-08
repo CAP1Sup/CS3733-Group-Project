@@ -20,7 +20,7 @@ export default function VenueView() {
         const selectedVenue = getSelect('venue-list');
         const selectedShow = getSelect('show-list');
         const selectedTime = getSelect('time-list');
-        
+
 
         const data = {
             email: email,
@@ -32,14 +32,14 @@ export default function VenueView() {
             .then((response) => {
                 console.log(response);
                 //for each venue, create <option> element
-                
+
                 // if(selectedVenue in )
                 //check if a selected venue exists
-                    //check if a selected show exists
-                        //show times in menu
-                        //else -> refresh shows list
-                    //else -> refresh venues
-                
+                //check if a selected show exists
+                //show times in menu
+                //else -> refresh shows list
+                //else -> refresh venues
+
                 let venuesStr = "";
                 let showsStr = "";
 
@@ -47,7 +47,7 @@ export default function VenueView() {
                 const showMenu = document.getElementById('show-list') as HTMLSelectElement;
                 const timeMenu = document.getElementById('time-list') as HTMLSelectElement;
 
-                
+
                 console.log(response.data.venue);
                 let venueArray = new Array();
                 let venueString = "";
@@ -56,8 +56,11 @@ export default function VenueView() {
                     venueString += "<option>" + venue.name + "</option>";
                 }
                 venueMenu.innerHTML = venueString;
-                if (!(selectedVenue in venueArray)){
+                if (!(selectedVenue in venueArray)) {
                     showMenu.innerHTML = "";
+                    return;
+                }
+                if (!(selectedShow in showMenu)){
                     timeMenu.innerHTML = "";
                     return;
                 }
@@ -75,19 +78,6 @@ export default function VenueView() {
             });
     }
 
-        /*fetch('https://cz4153iq4a.execute-api.us-east-1.amazonaws.com/prod/list-venues', {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        "email": "admin@gmail.com",
-        "passwd": "e2217d3e4e120c6a3372a1890f03e232b35ad659d71f7a62501a4ee204a3e66d",
-      })}
-    ).then(Response => console.log(Response))
-    .catch(console.error)*/
-    
-
     //This line runs listVenues() when the page first loads
     useEffect(() => {
         listVenues();
@@ -100,7 +90,6 @@ export default function VenueView() {
         //TODO: pass info from form to backend about deleting venue
         const email = getUsername();
         const password = getPassword();
-        //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const venueName = (document.getElementById("delete-venue-list") as HTMLSelectElement).value;
 
         console.log(venueName);
@@ -127,7 +116,6 @@ export default function VenueView() {
     function activate_show() {
         const email = getUsername();
         const password = getPassword();
-        //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const showName = getSelect('show-list');
         const venue = getSelect("venue-list");
         const showDate = getInput("show-date");
@@ -158,7 +146,6 @@ export default function VenueView() {
     function delete_show() {
         const email = getUsername();
         const password = getPassword();
-        //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
         const showName = getSelect('show-list');
         const venue = getSelect("venue-list");
         const combinedDate = getSelect('time-list')
@@ -192,7 +179,29 @@ export default function VenueView() {
     function editShowForward(): void {
         const showName = getSelect('show-list');
         const venue = getSelect("venue-list");
-        
+
+    }
+    function generate_show_report() {
+        const email = getUsername();
+        const password = getPassword();
+        const showName = (document.getElementById("generate-show-list") as HTMLSelectElement).value;
+        const venue = getInput("show-venue-name");
+        const showDate = getInput("show-date");
+        const showTime = getInput("show-time");
+        const combinedDate = new Date(showDate + "T" + showTime);
+
+        const data = {
+            email: email,
+            passwd: password,
+            venue: venue,
+            show: showName,
+            time: combinedDate,
+        };
+        //make request
+        instance.post("/generate-show-report", data).then((response) => {
+
+            console.log(response);
+        });
     }
 
     return (
@@ -201,10 +210,10 @@ export default function VenueView() {
                 <h1>Venue View!</h1>
             </div>
             <div id="error-message" className="error-message"></div>
-            <button onClick={() => listVenues()}>List venues</button>
+
             <div className="venues">
                 <a href="create-venue"><button>Create Venue</button></a>
-                <button onClick={(e)=>createShowForward()}>Create Venue</button>
+                <a href="create-show"><button>Create Show</button></a>
                 <p>
                     <select name="Venues" id="venue-list" size={6}>
                         <option>Venue 1</option>
@@ -226,6 +235,7 @@ export default function VenueView() {
                 <button onClick={() => activate_show()}>Activate Show</button>
                 <button onClick={() => delete_show()}>Delete Show</button>
                 <button onClick={() => editShowForward()} name="edit-show">Edit Show</button>
+                <a href="show_report"><button onClick={() => generate_show_report()}>Generate Show Report</button></a>
             </div>
         </>
     );

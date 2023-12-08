@@ -6,8 +6,10 @@ import CreateVenue from "./create_venue/create_venue";
 import BuyTickets from "./buy_tickets/buy_tickets";
 import AllShows from "./all_shows/all_shows";
 import ActiveShows from "./active_shows/active_shows";
+import ShowReport from "./show_report/show_report";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { getPassword, getUsername, saveUsername, savePassword } from "./useLogin";
+
 
 function TestingHomePage() {
     return (
@@ -34,6 +36,10 @@ function TestingHomePage() {
                 <div>
                     <a href="/login">Login</a>
                 </div>
+                <div>
+                    <a href="/show-report">Show Report</a>
+                </div>
+                
             </div>
         </>
     );
@@ -43,7 +49,12 @@ export default function App() {
     if (!getUsername() || !getPassword()) {
         return (
             <>
-                <Login />
+            <Login />
+                {/* <Router>
+                    <Route path="/buy-tickets" element={<BuyTickets />} />
+                    <Route path="/active-shows" element={<ActiveShows />} />
+                    <Route path="/" element={<Login />} />
+                </Router> */}
             </>
         );
     }
@@ -51,7 +62,6 @@ export default function App() {
     return (
         <>
             <TestingHomePage />
-            <button id="logoff" onClick={(e)=>{saveUsername("");savePassword("");window.location.href="/"}}>Log Off</button>
             <hr />
             <Router>
                 <Routes>
@@ -61,8 +71,8 @@ export default function App() {
                     <Route path="/active-shows" element={<ActiveShows />} />
                     <Route path="/create-show" element={<CreateShow />} />
                     <Route path="/create-venue" element={<CreateVenue />} />
-                    <Route path="/buy-tickets" element={<BuyTickets />} />
                     <Route path="/login" element={<Login />} />
+                    
                 </Routes>
             </Router>
         </>
