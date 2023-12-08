@@ -17,3 +17,7 @@ export const instance = axios.create({
 export function getInput(id: string) {
     return (document.getElementById(id) as HTMLInputElement).value;
 }
+
+export function getSelect(id: string){
+    return (document.getElementById(id) as HTMLSelectElement).value;
+}

@@ -44,25 +44,22 @@ export default function CreateVenue(){
     
           ]
         }
-    
+
         instance.post("/create-venue", data).then((response) => {
           console.log(response);
         }).catch((error) => {
+          const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+          errorMessage.innerHTML = error;
           console.log(error);
         });
-        //Construct JSON string from elements
-    
-        //Make request and retrieve remaining info
-    
-        //if failure, return error
-    
-        //if success, change pages to venue view page
+
       }
 
     return (
         <>
             <div>
                 <h1>Create Venue</h1>
+                <div id="error-message" className="error-message"></div>
                 <p>
                 Venue Name: <input type="text" name="Create Venue Name" id="create-venue-name" required />
                 </p>

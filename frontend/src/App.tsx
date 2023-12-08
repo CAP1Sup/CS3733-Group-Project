@@ -7,7 +7,7 @@ import BuyTickets from "./buy_tickets/buy_tickets";
 import AllShows from "./all_shows/all_shows";
 import ActiveShows from "./active_shows/active_shows";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { getPassword, getUsername } from "./useLogin";
+import { getPassword, getUsername, saveUsername, savePassword } from "./useLogin";
 
 function TestingHomePage() {
     return (
@@ -51,6 +51,7 @@ export default function App() {
     return (
         <>
             <TestingHomePage />
+            <button id="logoff" onClick={(e)=>{saveUsername("");savePassword("");window.location.href="/"}}>Log Off</button>
             <hr />
             <Router>
                 <Routes>

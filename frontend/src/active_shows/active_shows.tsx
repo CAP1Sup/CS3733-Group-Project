@@ -1,8 +1,8 @@
 import "../App.css";
-import { instance } from "../main";
+import {instance, getInput } from "../main";
 
-function active_shows() {
-    /*
+export default function ActiveShows() {
+    
     function search_shows() {
 
         const searchQuery = getInput("search");
@@ -14,10 +14,21 @@ function active_shows() {
         instance.post('/search-shows', data).then((response) => {
 
           console.log(response);
+          const search_results = document.getElementById("search-response") as HTMLDivElement
+          let results_string = "";
+          for (const v of response.data){
+            
+            for (const s of v.shows){
+                results_string += s.name + "\n";
+            }
+            }     
+            search_results.innerHTML = results_string;
         })
-      }*/
+      }
 
     function list_active_shows() {
+
+        
         //make request
         instance.get("/list-active-shows").then((response) => {
             console.log(response);
@@ -43,19 +54,17 @@ function active_shows() {
                 <h1>Active Shows</h1>
             </div>
             <div className="activeShows">
-                <form id="active-show">
-                    <p>
-                        <select name="Active Shows" id="active-show-list">
-                            <option>Show 1</option>
-                            <option>Show 2</option>
-                            <option>Show 3</option>
-                        </select>
-                    </p>
-                    <button onClick={() => list_active_shows()}>Active Shows</button>
-                </form>
+                <select name="Active Shows" id="active-show-list">
+                <option>Show 1</option>
+                <option>Show 2</option>
+                <option>Show 3</option>
+                </select>
+                <button onClick={(e) => {e.preventDefault(); list_active_shows()}}>Active Shows</button>
             </div>
+            <input id="search" type="text" />
+            <button onClick={(e)=>search_shows()}>Search</button>
+            
+            <div id="search-response"></div>
         </>
     );
 }
-
-export default active_shows;
