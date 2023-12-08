@@ -66,15 +66,15 @@ export default function CreateVenue(){
                 </p>
                 <h2>Sections</h2>
                 <h3>Left</h3>
-                Section Name: <input type="text" name="LeftSect" id="LeftSect" required />
+                Section Name: <input type="text" name="LeftSect" id="LeftSect" required value="Left" />
                 Left Rows: <input type="number" min='1' name="LeftR" id="LeftR" required />
                 Left Columns: <input type="number" min='1' name="LeftC" id="LeftC" required />
                 <h3>Center</h3>
-                Section Name: <input type="text" name="CenterSect" id="CenterSect" required />
+                Section Name: <input type="text" name="CenterSect" id="CenterSect" required value="Center" />
                 Center Rows: <input type="number" min='1' name="CenterR" id="CenterR" required />
                 Center Columns: <input type="number" min='1' name="CenterC" id="CenterC" required />
                 <h3>Right</h3>
-                Section Name: <input type="text" name="RightSect" id="RightSect" required />
+                Section Name: <input type="text" name="RightSect" id="RightSect" required value="Right"/>
                 Right Rows: <input type="number" min='1' name="RightR" id="RightR" required />
                 Right Columns: <input type="number" min='1' name="RightC" id="RightC" required />
                 <p></p>

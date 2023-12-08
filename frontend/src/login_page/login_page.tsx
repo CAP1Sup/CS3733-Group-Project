@@ -38,7 +38,7 @@ export default function Login() {
                 </p>
             </form>
             <div>
-              <button onClick={(e) => {LogOut();window.location.href="/"}}>Log Out</button>
+              <button onClick={() => {LogOut();window.location.href="/"}}>Log Out</button>
             </div>
         </>
     );
