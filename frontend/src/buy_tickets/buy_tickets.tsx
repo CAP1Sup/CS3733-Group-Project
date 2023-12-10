@@ -21,11 +21,10 @@ export default function BuyTickets() {
         //make request
         const seatList = document.getElementById("seats-list") as HTMLSelectElement;
         seatList.innerHTML = "";
+        let i = 0;
         instance.post("/get-available-seats", data).then((response) => {
-            const i = 0;
-            const optionSection = document.createElement("OPTGROUP") as HTMLOptGroupElement;
             for (const section of response.data) {
-                console.log(section);
+                const optionSection = document.createElement("OPTGROUP") as HTMLOptGroupElement;
                 sectionNames.push([section.name, i]);
                 for (const seat of section.seats) {
                     let isPurchased = " (Purchased)";
@@ -43,7 +42,10 @@ export default function BuyTickets() {
                         "</option>";
                     optionSection.innerHTML += option;
                 }
+                console.log(optionSection);
                 seatList.add(optionSection);
+                console.log(seatList)
+                i += 1;
             }
         });
     }
