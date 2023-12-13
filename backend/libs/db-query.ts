@@ -614,6 +614,55 @@ export async function setSeatBlock(
     });
 }
 
+export async function setSeatBlockToDefault(show: Show, blockName: string, db: Connection) {
+    return new Promise<number>(async (resolve, reject) => {
+        // Make sure that the show has an ID
+        if (!show.id) {
+            return reject("No show ID in show");
+        }
+
+        try {
+            // Get the default block ID
+            const defaultBlock = await getBlockByName(show, defaultBlockName, db);
+
+            // Make sure that the default block exists
+            if (!defaultBlock.id) {
+                throw "Default block doesn't exist";
+            }
+
+            // Get the block ID for the given block to delete
+            const blockToDelete = await getBlockByName(show, blockName, db);
+
+            // Make sure that the block to delete's id exists
+            if (!blockToDelete.id) {
+                throw "Block to delete doesn't exist";
+            }
+
+            // Update the seats that use the block to delete to use the default block
+            let [updateResult] = await db.execute("UPDATE seats SET blockID=? WHERE blockID=?", [
+                defaultBlock.id,
+                blockToDelete.id,
+            ]);
+            updateResult = updateResult as ResultSetHeader;
+            if (updateResult.affectedRows == 0) {
+                throw "Unable to set seats to default block";
+            }
+
+            // Delete the block
+            let [deleteResult] = await db.execute("DELETE FROM blocks WHERE ID=?", [blockToDelete.id]);
+            deleteResult = deleteResult as ResultSetHeader;
+            if (deleteResult.affectedRows == 0) {
+                throw "Unable to delete old block";
+            }
+
+            // Return the number of affected rows
+            return resolve(updateResult.affectedRows);
+        } catch (error) {
+            return reject("Database error purchasing seat: " + error);
+        }
+    });
+}
+
 export async function deleteSeats(show: Show, db: Connection) {
     return new Promise<Seat[]>(async (resolve, reject) => {
         try {
@@ -633,6 +682,43 @@ export async function deleteSeats(show: Show, db: Connection) {
             throw "Unable to delete seats";
         } catch (error) {
             return reject("Database error deleting seats: " + error);
+        }
+    });
+}
+
+export async function createBlock(show: Show, name: string, price: number, db: Connection) {
+    return new Promise<Block>(async (resolve, reject) => {
+        // Validate the parameters
+        if (!show.id) {
+            return reject("No ID in show");
+        }
+
+        try {
+            // Check to make sure that the block doesn't already exist
+            let [rows] = await db.execute("SELECT * FROM blocks WHERE showID=? AND name=?", [show.id, name]);
+            rows = rows as RowDataPacket[];
+            if (rows.length > 0) {
+                throw "Block already exists";
+            }
+
+            // Create the block in the database
+            let [result] = await db.execute("INSERT INTO blocks(showID, name, price) VALUES(?,?,?)", [
+                show.id,
+                name,
+                price,
+            ]);
+            result = result as ResultSetHeader;
+            if (result.affectedRows == 1) {
+                return resolve({
+                    id: result.insertId,
+                    showID: show.id,
+                    name: name,
+                    price: price,
+                });
+            }
+            throw "No rows updated when creating block";
+        } catch (error) {
+            return reject("Database error creating a block: " + error);
         }
     });
 }
@@ -678,39 +764,27 @@ export async function getBlocks(seats: Seat[], db: Connection) {
     });
 }
 
-export async function createBlock(show: Show, name: string, price: number, db: Connection) {
+export async function getBlockByName(show: Show, name: string, db: Connection) {
     return new Promise<Block>(async (resolve, reject) => {
-        // Validate the parameters
+        // Make sure that the show has an ID
         if (!show.id) {
             return reject("No ID in show");
         }
 
         try {
-            // Check to make sure that the block doesn't already exist
+            // Check for the block in the DB
             let [rows] = await db.execute("SELECT * FROM blocks WHERE showID=? AND name=?", [show.id, name]);
             rows = rows as RowDataPacket[];
-            if (rows.length > 0) {
-                throw "Block already exists";
+            if (rows.length == 0) {
+                throw "Block doesn't exist";
+            } else if (rows.length > 1) {
+                throw "Multiple blocks with the given name found";
             }
 
-            // Create the block in the database
-            let [result] = await db.execute("INSERT INTO blocks(showID, name, price) VALUES(?,?,?)", [
-                show.id,
-                name,
-                price,
-            ]);
-            result = result as ResultSetHeader;
-            if (result.affectedRows == 1) {
-                return resolve({
-                    id: result.insertId,
-                    showID: show.id,
-                    name: name,
-                    price: price,
-                });
-            }
-            throw "No rows updated when creating block";
+            // Convert the DB rows to block objects
+            return resolve(dbToBlocks(rows)[0]);
         } catch (error) {
-            return reject("Database error creating a block: " + error);
+            return reject("Database error getting block by name: " + error);
         }
     });
 }

@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"email\":\"manager@gmail.com\",\"passwd\":\"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5\",\"venue\":\"Alden Hall\",\"show\":\"Aladdin\",\"time\":\"2023-12-05T23:00:00.000Z\",\"name\":\"New Block\"}"
+}
