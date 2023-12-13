@@ -120,6 +120,34 @@ export async function getVenuesJSON(user: User, db: Connection) {
     });
 }
 
+export async function getVenueShowsJSON(venue: Venue, db: Connection) {
+    // Pull all of the data from the DB
+    return new Promise<string>(async (resolve, reject) => {
+        try {
+            let shows: Show[];
+
+            // Get the shows for the venue
+            shows = await getShows(venue, db);
+
+            // Error if there are no shows
+            if (shows.length === 0) {
+                reject("No shows for venue");
+            }
+
+            // Remove the unneeded data
+            for (let i = 0; i < shows.length; i++) {
+                delete shows[i].id;
+                delete shows[i].defaultPrice;
+                delete shows[i].seats;
+            }
+
+            return resolve(JSON.stringify({ shows: shows }));
+        } catch (error) {
+            return reject(error);
+        }
+    });
+}
+
 export async function getActiveShowsJSON(db: Connection) {
     // Pull all of the data from the DB
     return new Promise<string>(async (resolve, reject) => {

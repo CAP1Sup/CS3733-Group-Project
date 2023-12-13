@@ -1,19 +1,18 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { getVenuesJSON } from "./libs/db-conv";
-import { activateShow, beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
-import { Show, Venue } from "./libs/db-types";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
+import { beginTransaction, getUser, getVenues, venueExists } from "./libs/db-query";
+import { getVenueShowsJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
+import { Venue } from "./libs/db-types";
 
-interface ActivateShowRequest {
+interface ListShowsRequest {
     email: string;
     passwd: string;
     venue: string;
-    show: string;
-    time: string;
 }
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    // Make sure that the request is a POST request
     if (event.httpMethod != "POST") {
         return errorResponse("Invalid request, must be a POST request");
     }
@@ -26,20 +25,14 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: ActivateShowRequest = JSON.parse(event.body);
+    const request: ListShowsRequest = JSON.parse(event.body);
 
-    // Make sure that all required fields are present
-    if (
-        !request.hasOwnProperty("email") ||
-        !request.hasOwnProperty("passwd") ||
-        !request.hasOwnProperty("venue") ||
-        !request.hasOwnProperty("show") ||
-        !request.hasOwnProperty("time")
-    ) {
-        return errorResponse("Malformed request, missing required field");
+    // Check to make sure that all values are present
+    if (!request.hasOwnProperty("email") || !request.hasOwnProperty("passwd") || !request.hasOwnProperty("venue")) {
+        return errorResponse("Malformed request, missing parameters");
     }
 
-    // Start the DB connection
+    // Create a new transaction with the DB
     // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
     let db: Connection | undefined;
     try {
@@ -62,33 +55,19 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "You're not authorized to make modifications to that venue";
         }
 
-        // Check if the show exists
-        let show: Show;
-        venue.shows = await getShows(venue, db);
-        if (venue.shows.some((show) => show.name === request.show && show.time.toISOString() === request.time)) {
-            show = venue.shows.find(
-                (show) => show.name === request.show && show.time.toISOString() === request.time
-            ) as Show;
-        } else {
-            throw "Specified show doesn't exist";
-        }
-
-        // Attempt to delete the show
-        await activateShow(venue, show, db);
-
-        // Get the venues that match the user's info
-        const venueJSON = await getVenuesJSON(user, db);
+        // Get the shows at the venue
+        const venueShowJSON = await getVenueShowsJSON(venue, db);
 
         // Commit the transaction
         await db.commit();
 
-        // Close the connection
+        // Close the DB connection
         await db.end();
 
-        // Return the updated list of venues
-        return successResponse(venueJSON);
+        // Return the user's venues
+        return successResponse(venueShowJSON);
     } catch (error) {
-        // Rollback the transaction, there was an error
+        // Roll back the transaction, there was an error
         if (db) {
             await db.rollback();
             await db.end();
