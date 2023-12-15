@@ -299,7 +299,7 @@ export async function createShow(venue: Venue, name: string, date: Date, default
             let [result] = await db.execute("INSERT INTO shows(venueID, name, date, defaultPrice) VALUES(?,?,?,?)", [
                 venue.id,
                 name,
-                date,
+                date.toISOString(),
                 defaultPrice,
             ]);
             result = result as ResultSetHeader;

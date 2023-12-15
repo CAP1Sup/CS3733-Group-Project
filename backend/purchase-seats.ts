@@ -94,6 +94,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
+        // Make sure that the show is in the future
+        if (show.time.getTime() < Date.now()) {
+            throw "Unable purchase seats for a show that's already happened";
+        }
+
         // Edit each seat to be purchased
         for (let i = 0; i < request.seats.length; i++) {
             // Make sure that the section is between 0 and the number of sections

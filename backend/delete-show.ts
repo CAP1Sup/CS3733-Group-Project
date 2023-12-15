@@ -39,12 +39,6 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         return errorResponse("Malformed request, missing required field");
     }
 
-    // Make sure that the time is in the future
-    /*
-    if (request.time < new Date()) {
-        return errorResponse("Invalid time");
-    }*/
-
     // Start the DB connection
     // Must be in a try-catch block to ensure that the errors are rolled back and the connection is closed if there's an error
     let db: Connection | undefined;

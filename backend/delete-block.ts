@@ -91,6 +91,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
+        // Make sure that the show isn't active
+        if (show.active) {
+            throw "Show is already active";
+        }
+
         // Set the seats from the block back to the default block
         await setSeatBlockToDefault(show, request.name, db);
 

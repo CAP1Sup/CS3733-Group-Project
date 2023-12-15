@@ -42,10 +42,9 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Make sure that the time is in the future
-    /*
-    if (request.time < new Date()) {
-        return errorResponse("Invalid time");
-    }*/
+    if (Date.parse(request.time) < Date.now()) {
+        return errorResponse("Time must be in the future");
+    }
 
     // Make sure that the price is positive
     if (request.defaultPrice < 0) {

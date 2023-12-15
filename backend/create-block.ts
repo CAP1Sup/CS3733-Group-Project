@@ -113,6 +113,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
+        // Make sure that the show isn't active
+        if (show.active) {
+            throw "Show is already active";
+        }
+
         // Create the block
         const block = await createBlock(show, request.name, request.price, db);
 
