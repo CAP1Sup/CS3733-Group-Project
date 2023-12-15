@@ -77,6 +77,7 @@ export default function BuyTickets() {
         //make request
         instance.post("/purchase-seats", data).then((response) => {
             console.log(response);
+            show_available_seats();
         });
     }
 

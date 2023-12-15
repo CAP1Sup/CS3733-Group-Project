@@ -7,16 +7,19 @@ import "../App.css";
 export default function ShowReport() {
     const location = useLocation();
 
+    if(location.state == null){
+        return (
+            <>
+                <h1>Error: you shouldn't be here. Please select a venue from the venue viewing page to navigate here properly.</h1>
+            </>
+        )
+    }
+
     //This line runs generate_show_report() when the page first loads
 
-    console.log(location.state.venue + "/" + location.state.show + "/" + location.state.time + " c'est la venue");
-
-    function generate_show_report() {
+    function generate_shows_report() {
         const email = getUsername();
         const password = getPassword();
-        const venueName = location.state.venue;
-        // const showName = location.state.show;
-        // const combinedDate = new Date(location.state.time);
 
         const data = {
             email: email,
@@ -26,22 +29,59 @@ export default function ShowReport() {
         instance.post("/list-venues", data).then((response) => {
 
             console.log(response);
-            const showsArray = response.data.filter((obj: any)=>obj.name===venueName)[0];
             const sReport = document.getElementById('shows-report') as HTMLDivElement;
-            sReport.innerHTML = "<tr><th>Venue Name</th><th>Show Name</th><th>Active?</th></tr>";
-            console.log(showsArray);
-            for(const show of showsArray.shows){
-                let active = "Active";
-                if(show.active === 0){
-                    active = "Inactive"
+            sReport.innerHTML = "<tr><th>Venue Name</th><th>Show Name</th><th>Active?</th><th>Seats Remaining</th><th>Sales</th></tr>";
+            for(const venue of response.data){
+                for(const show of venue.shows){
+                    let active = "Inactive";
+                    const showObject = single_show_report(show.name, show.time);
+
+
+                    if(show.active === 1){
+                        active = "Active"
+                    }
+                    sReport.innerHTML +="<tr><th>" + venue.name + "</th><th>" + show.name + "</th><th>" + active + "</th></tr>";
                 }
-                sReport.innerHTML +="<tr><th>" + venueName + "</th><th>" + show.name + "</th><th>" + active + "</th></tr>";
             }
             return response;
         }).catch((error)=>{
             console.log(error);
             return error;
         });
+    }
+
+    function single_show_report(showName : string, showTime : string){
+        const email = getUsername();
+        const password = getPassword();
+        const venueName = location.state.venue;
+        const show = showName;
+        const time = showTime;
+        const data = {
+            email: email,
+            passwd: password,
+            venue: venueName,
+            show: show,
+            time: time
+        };
+        instance.post('/generate-show-report', data).then((response)=>{
+            console.log(response.data);
+            let purchasedCount = 0;
+            let totalSales = 0;
+            let totalSeats = 0;
+            for(const section of response.data){
+                for(const seat of section.seats){
+                    if(seat.purchased === 1){
+                        purchasedCount += 1;
+                        totalSales += seat.block.price;
+                    }
+                    totalSeats += 1;
+                }
+            }
+            return [purchasedCount, totalSales, totalSeats];
+        }).catch((error)=>{
+            console.log(error)
+            return error;
+        })
     }
 
     
@@ -52,7 +92,7 @@ export default function ShowReport() {
                 <h1>Show Report</h1>
             </div>
             
-            <button onClick={() => generate_show_report()}>Show Report</button>
+            <button onClick={() => generate_shows_report()}>Show Report</button>
             <label>Venue: {location.state.venue} </label>
             <table id="shows-report"></table>
         </>

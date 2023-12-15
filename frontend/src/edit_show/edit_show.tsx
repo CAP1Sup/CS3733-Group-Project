@@ -5,6 +5,13 @@ import { useLocation } from "react-router-dom";
 
 export default function EditShow() {
     const location = useLocation();
+    if(location.state == null){
+        return (
+            <>
+                <h1>Error: you shouldn't be here. Please select a venue, show and time from the venue viewing page to navigate here properly.</h1>
+            </>
+        )
+    }
     let sectionInfos = new Array();
 
     function createShow() {
@@ -81,6 +88,7 @@ export default function EditShow() {
             .post("/create-block", data)
             .then((response) => {
                 console.log(response);
+                listBlocks();
             })
             .catch((error) => {
                 console.log(error);
@@ -99,13 +107,13 @@ export default function EditShow() {
             show: location.state.show,
             time: new Date(location.state.time),
             name: blockName
-            
         };
 
         instance
             .post("/delete-block", data)
             .then((response) => {
                 console.log(response);
+                listBlocks();
             })
             .catch((error) => {
                 console.log(error);
@@ -166,8 +174,21 @@ export default function EditShow() {
                 console.log(sectionInfos)
                 console.log(uniqueBlockNames);
                 const table = document.getElementById('block-listings') as HTMLTableElement;
-                // for(const name in uniqueBlockNames){}
-                // table.insertRow().insertCell(0);
+                table.innerHTML = "";
+                const newRow = table.insertRow();
+                newRow.insertCell().textContent = "Block Name";
+                newRow.insertCell().textContent = "Price"
+                newRow.insertCell().textContent = "Section"
+                newRow.insertCell().textContent = "Starting Row"
+                newRow.insertCell().textContent = "Ending Row"
+                for(const item of uniqueBlockNames){
+                    const tempRow = table.insertRow();
+                    tempRow.insertCell().textContent = item.blockname;
+                    tempRow.insertCell().textContent = item.price;
+                    tempRow.insertCell().textContent = item.section;
+                    tempRow.insertCell().textContent = item.startrow;
+                    tempRow.insertCell().textContent = item.endrow;
+                }
             })
             .catch((error) => {
                 console.log(error);
@@ -193,7 +214,7 @@ export default function EditShow() {
                 Block Price:
                 <input className="blockPrice" type="number" min="0" step=".01" id="block-price"/>
 
-                <button className="createBloclButton" onClick={() => createBlock()}>
+                <button className="createBlockButton" onClick={() => createBlock()}>
                     Create Block
                 </button>
 

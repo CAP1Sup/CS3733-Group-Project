@@ -5,6 +5,13 @@ import "./create_show.css";
 
 export default function CreateShow() {
     const location = useLocation();
+    if(location.state == null){
+        return (
+            <>
+                <h1>Error: you shouldn't be here. Please select a venue from the venue viewing page to navigate here properly.</h1>
+            </>
+        )
+    }
 
     function createShow() {
         //TODO: pass info to backend about the show
