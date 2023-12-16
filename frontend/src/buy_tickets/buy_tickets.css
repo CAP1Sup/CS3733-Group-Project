@@ -21,6 +21,18 @@ p {
     margin-top: 10px;
 }
 
+.tableSeats {
+    overflow: scroll;
+    width: 200%;
+    height: 300px;
+    align-self: center;
+}
+
+table {
+    width: 100%;
+}
+
+
 .purchaseSeatButton {
     cursor: pointer;
     background-color: #000000;

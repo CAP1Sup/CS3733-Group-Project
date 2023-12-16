@@ -1,7 +1,7 @@
 //import { useState } from 'react'
 import { useEffect } from "react";
 import "../App.css";
-import { instance, getSelect, createOptionsList, getItemName, getShowTime } from "../main";
+import { instance, getSelect, createOptionsList, getItemName, getShowTime, createTimeOptionsList } from "../main";
 import { getPassword, getUsername } from "../useLogin";
 import { Link } from "react-router-dom";
 import "./venue_view.css";
@@ -15,6 +15,8 @@ export default function VenueView() {
     const exportVenue = { venue: "" };
     const exportShow = { venue: "", show: "", time: "" };
 
+    let internalTimes = new Array();
+
     function listVenues() {
         const email = getUsername();
         const password = getPassword();
@@ -22,6 +24,7 @@ export default function VenueView() {
         const selectedVenue = getSelect("venue-list");
         const selectedShow = getSelect("show-list");
         const selectedTime = getSelect("time-list");
+        console.log(selectedTime);
 
         const data = {
             email: email,
@@ -48,6 +51,8 @@ export default function VenueView() {
                 console.log("e");
 
                 console.log(response.data);
+                const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                errorMessage.innerHTML = "";
                 const [venueString, venueIndex] = createOptionsList(response.data, selectedVenue, getItemName);
                 venueMenu.innerHTML = venueString;
                 if (venueIndex === -1) {
@@ -71,7 +76,6 @@ export default function VenueView() {
                     getItemName
                 );
                 console.log(showIndex);
-                //TODO: for some reason it's listing shows with no information, will fix later, not important currently
                 showMenu.innerHTML = showString;
                 if (showIndex === -1) {
                     timeMenu.style.display = "none";
@@ -86,12 +90,13 @@ export default function VenueView() {
                     return item.name === selectedShow;
                 });
                 console.log(times);
-                const [timeString, timeIndex] = createOptionsList(times, selectedTime, getShowTime);
-                timeMenu.innerHTML = timeString;
+                const [timeString, timeIndex] = createTimeOptionsList(times, selectedTime, getShowTime);
+                internalTimes.push(times);
+                timeMenu.innerHTML = timeString as string;
                 if (timeIndex === -1) {
                     return;
                 }
-                timeMenu.selectedIndex = timeIndex;
+                timeMenu.selectedIndex = timeIndex as number;
                 exportShow.time = getSelect("time-list");
                 return;
             })
@@ -135,8 +140,13 @@ export default function VenueView() {
                 listVenues();
             })
             .catch((error) => {
+
                 const errorMessage = document.getElementById("error-message") as HTMLDivElement;
-                errorMessage.innerHTML = error;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
     }
@@ -155,18 +165,64 @@ export default function VenueView() {
             show: showName,
             time: time,
         };
-        //make request
+
+        //TODO: ADD CHECK THAT ALL BLOCKS ARE ACCOUNTED FOR
+        
         instance
-            .post("/activate-show", data)
+            .post("/list-blocks", data)
             .then((response) => {
-                console.log(response);
-                listVenues();
-            })
-            .catch((error) => {
+                let hasBlocks = -1;
+                for(const section of response.data){
+                    for(const seat of section.seats){
+                        if(hasBlocks == -1){
+                            if(seat.block.name === "Default"){
+                                hasBlocks = 0;
+                            }
+                            else{
+                                hasBlocks = 1;
+                            }
+                            continue;
+                        }
+                        const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                        if(hasBlocks == 0 && seat.block.name != "Default"){
+                            errorMessage.innerHTML = "Not all blocks assigned.";
+                            return new Error("Not all blocks assigned.");
+                        }
+                        if(hasBlocks == 1 && seat.block.name === "Default"){
+                            errorMessage.innerHTML = "Not all blocks assigned.";
+                            return new Error("Not all blocks assigned.");
+                        }
+                    }
+                }
+                instance
+                    .post("/activate-show", data)
+                    .then((response) => {
+                        console.log(response);
+                        listVenues();
+                        const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                        errorMessage.innerHTML = 'Show has been activated!'
+                    })
+                    .catch((error) => {
+                        
+                        const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                        if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                            errorMessage.innerHTML = error.response.data;
+                        } else {
+                            errorMessage.innerHTML = error;
+                        }
+                        console.log(error);
+                    });
+            }).catch((error) => {
+
                 const errorMessage = document.getElementById("error-message") as HTMLDivElement;
-                errorMessage.innerHTML = error;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
+        //make request
     }
 
     function delete_show() {
@@ -191,8 +247,13 @@ export default function VenueView() {
                 listVenues();
             })
             .catch((error) => {
+                
                 const errorMessage = document.getElementById("error-message") as HTMLDivElement;
-                errorMessage.innerHTML = error;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
     }

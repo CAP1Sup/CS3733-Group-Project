@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { instance, getInput } from "../main";
 import { getPassword, getUsername } from "../useLogin";
 import "./create_venue.css";
@@ -58,6 +59,8 @@ export default function CreateVenue() {
     return (
         <>
             <div>
+                <Link to='/venue-view'><button>Back</button></Link>
+                <div id="error-message" className="error-message"></div>
                 <h1>Create Venue</h1>
                 <div id="error-message" className="error-message"></div>
                 <p>

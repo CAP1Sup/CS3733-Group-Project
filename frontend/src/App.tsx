@@ -8,42 +8,46 @@ import AllShows from "./all_shows/all_shows";
 import ActiveShows from "./active_shows/active_shows";
 import ShowReport from "./show_report/show_report";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { getPassword, getUsername, saveUsername, savePassword } from "./useLogin";
+import { getPassword, getUsername} from "./useLogin";
+import EditShow from "./edit_show/edit_show";
 
 
-function TestingHomePage() {
-    return (
-        <>
-            <div className="bigMan">
-                <div>
-                    <a href="/active-shows">Active Shows</a>
-                </div>
-                <div>
-                    <a href="/all-shows">All Shows</a>
-                </div>
-                <div>
-                    <a href="/venue-view">Venue View</a>
-                </div>
-                <div>
-                    <a href="/create-show">Create Show</a>
-                </div>
-                <div>
-                    <a href="/create-venue">Create Venue</a>
-                </div>
-                <div>
-                    <a href="/buy-tickets">Buy Tickets</a>
-                </div>
-                <div>
-                    <a href="/login">Login</a>
-                </div>
-                <div>
-                    <a href="/show-report">Show Report</a>
-                </div>
+// function TestingHomePage() {
+//     return (
+//         <>
+//             <div className="bigMan">
+//                 <div>
+//                     <a href="/active-shows">Active Shows</a>
+//                 </div>
+//                 <div>
+//                     <a href="/all-shows">All Shows</a>
+//                 </div>
+//                 <div>
+//                     <a href="/venue-view">Venue View</a>
+//                 </div>
+//                 <div>
+//                     <a href="/create-show">Create Show</a>
+//                 </div>
+//                 <div>
+//                     <a href="/create-venue">Create Venue</a>
+//                 </div>
+//                 <div>
+//                     <a href="/buy-tickets">Buy Tickets</a>
+//                 </div>
+//                 <div>
+//                     <a href="/login">Login</a>
+//                 </div>
+//                 <div>
+//                     <a href="/show-report">Show Report</a>
+//                 </div>
+//                 <div>
+//                     <a href="/edit-show">Edit Show</a>
+//                 </div>
                 
-            </div>
-        </>
-    );
-}
+//             </div>
+//         </>
+//     );
+// }
 
 export default function App() {
     if (!getUsername() || !getPassword()) {
@@ -54,6 +58,7 @@ export default function App() {
                         <Route path="/buy-tickets" element={<BuyTickets />} />
                         <Route path="/active-shows" element={<ActiveShows />} />
                         <Route path="/" element={<Login />} />
+                        <Route path="/login" element={<Login />} />
                     </Routes>
                 </Router>
             </>
@@ -62,8 +67,7 @@ export default function App() {
 
     return (
         <>
-            <TestingHomePage />
-            <hr />
+            {/* <TestingHomePage /> */}
             <Router>
                 <Routes>
                     <Route path="/venue-view" element={<VenueView />} />
@@ -74,6 +78,7 @@ export default function App() {
                     <Route path="/create-venue" element={<CreateVenue />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/show-report" element={<ShowReport />} />
+                    <Route path="/edit-show" element={<EditShow />} />
                 </Routes>
             </Router>
         </>
