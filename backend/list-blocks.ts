@@ -1,11 +1,11 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { getVenuesJSON } from "./libs/db-conv";
-import { activateShow, beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
-import { Show, Venue } from "./libs/db-types";
+import { beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
+import { Show, Venue } from "./libs/db-types";
+import { getSeatJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
-interface ActivateShowRequest {
+interface ListBlocksRequest {
     email: string;
     passwd: string;
     venue: string;
@@ -26,7 +26,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: ActivateShowRequest = JSON.parse(event.body);
+    const request: ListBlocksRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
     if (
@@ -47,24 +47,28 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         db = await beginTransaction();
 
         // Get the user's information
-        let user = await getUser(request.email, request.passwd, db);
+        const user = await getUser(request.email, request.passwd, db);
 
-        // Check if the user is authorized for the given venue
+        // Get the venues that the user has access to
+        const venues = await getVenues(user, db);
+
+        // Check if the user's requested venue exists
         let venue: Venue;
-        const userVenues = await getVenues(user, db);
-        if (userVenues.some((venue) => venue.name === request.venue)) {
-            venue = userVenues.find((venue) => venue.name === request.venue) as Venue;
+        if (venues.some((venue) => venue.name === request.venue)) {
+            venue = venues.find((venue) => venue.name === request.venue) as Venue;
         } else {
             // User doesn't have access to the venue, find out if the venue exists
-            venueExists(request.venue, db).catch((error) => {
-                throw error;
-            });
-            throw "You're not authorized to make modifications to that venue";
+            if (await venueExists(request.venue, db)) {
+                throw "You're not authorized to see blocks for that show";
+            }
+            throw "Venue doesn't exist";
         }
+
+        // Get all of the shows for the venue
+        venue.shows = await getShows(venue, db);
 
         // Check if the show exists
         let show: Show;
-        venue.shows = await getShows(venue, db);
         if (venue.shows.some((show) => show.name === request.show && show.time.toISOString() === request.time)) {
             show = venue.shows.find(
                 (show) => show.name === request.show && show.time.toISOString() === request.time
@@ -73,11 +77,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
-        // Attempt to delete the show
-        await activateShow(venue, show, db);
-
-        // Get the venues that match the user's info
-        const venueJSON = await getVenuesJSON(user, db);
+        // Get the seating data for the show
+        const showJSON = await getSeatJSON(venue, show, db);
 
         // Commit the transaction
         await db.commit();
@@ -85,8 +86,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Close the connection
         await db.end();
 
-        // Return the updated list of venues
-        return successResponse(venueJSON);
+        // Return the seats in the show
+        return successResponse(showJSON);
     } catch (error) {
         // Rollback the transaction, there was an error
         if (db) {

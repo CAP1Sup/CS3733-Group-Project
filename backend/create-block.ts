@@ -1,16 +1,28 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { getVenuesJSON } from "./libs/db-conv";
-import { activateShow, beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
-import { Show, Venue } from "./libs/db-types";
+import {
+    beginTransaction,
+    createBlock,
+    getSections,
+    getShows,
+    getUser,
+    getVenues,
+    setSeatBlock,
+    venueExists,
+} from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
+import { Show, Venue } from "./libs/db-types";
+import { getSeatJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
-interface ActivateShowRequest {
+interface CreateBlockRequest {
     email: string;
     passwd: string;
     venue: string;
     show: string;
     time: string;
+    name: string;
+    price: number;
+    seats: { section: string; row: string; column: string }[];
 }
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -26,7 +38,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: ActivateShowRequest = JSON.parse(event.body);
+    const request: CreateBlockRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
     if (
@@ -34,9 +46,29 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         !request.hasOwnProperty("passwd") ||
         !request.hasOwnProperty("venue") ||
         !request.hasOwnProperty("show") ||
-        !request.hasOwnProperty("time")
+        !request.hasOwnProperty("time") ||
+        !request.hasOwnProperty("name") ||
+        !request.hasOwnProperty("price") ||
+        !request.hasOwnProperty("seats") ||
+        request.seats.length === 0
     ) {
         return errorResponse("Malformed request, missing required field");
+    }
+
+    // Make sure that the seats are valid
+    for (let i = 0; i < request.seats.length; i++) {
+        if (
+            !request.seats[i].hasOwnProperty("section") ||
+            !request.seats[i].hasOwnProperty("row") ||
+            !request.seats[i].hasOwnProperty("column")
+        ) {
+            return errorResponse("Malformed request, missing required field in seats");
+        }
+    }
+
+    // Make sure that the price is positive
+    if (request.price < 0) {
+        return errorResponse("Invalid price");
     }
 
     // Start the DB connection
@@ -47,7 +79,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         db = await beginTransaction();
 
         // Get the user's information
-        let user = await getUser(request.email, request.passwd, db);
+        const user = await getUser(request.email, request.passwd, db);
 
         // Check if the user is authorized for the given venue
         let venue: Venue;
@@ -62,6 +94,14 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "You're not authorized to make modifications to that venue";
         }
 
+        // Make sure that the venue has an ID
+        if (!venue.id) {
+            throw "Venue doesn't have an ID";
+        }
+
+        // Get the sections for the venue
+        venue.sections = await getSections(venue.id, db);
+
         // Check if the show exists
         let show: Show;
         venue.shows = await getShows(venue, db);
@@ -73,11 +113,34 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
-        // Attempt to delete the show
-        await activateShow(venue, show, db);
+        // Make sure that the show isn't active
+        if (show.active) {
+            throw "Show is already active";
+        }
 
-        // Get the venues that match the user's info
-        const venueJSON = await getVenuesJSON(user, db);
+        // Create the block
+        const block = await createBlock(show, request.name, request.price, db);
+
+        // Add the new block to each seat
+        for (let i = 0; i < request.seats.length; i++) {
+            // Make sure that the section is between 0 and the number of sections
+            const sectionIndex = parseInt(request.seats[i].section);
+            if (sectionIndex < 0 || sectionIndex >= venue.sections.length) {
+                throw "Invalid section in block update request's seats";
+            }
+            // TODO: Add a check to make sure that venue.sections[sectionIndex] exists
+            await setSeatBlock(
+                show,
+                venue.sections[sectionIndex],
+                parseInt(request.seats[i].row),
+                parseInt(request.seats[i].column),
+                block,
+                db
+            );
+        }
+
+        // Get the active venues
+        const seatJSON = await getSeatJSON(venue, show, db);
 
         // Commit the transaction
         await db.commit();
@@ -85,8 +148,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Close the connection
         await db.end();
 
-        // Return the updated list of venues
-        return successResponse(venueJSON);
+        // Return the active venues
+        return successResponse(seatJSON);
     } catch (error) {
         // Rollback the transaction, there was an error
         if (db) {

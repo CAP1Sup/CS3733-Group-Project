@@ -1,5 +1,5 @@
 import { RowDataPacket } from "mysql2";
-import { getActiveShows, getSeats, getShows, getVenues } from "./db-query";
+import { getActiveShows, getBlocks, getSeats, getShows, getVenues } from "./db-query";
 import { Block, Seat, Section, Show, User, Venue } from "./db-types";
 import { Connection } from "mysql2/promise";
 
@@ -114,6 +114,34 @@ export async function getVenuesJSON(user: User, db: Connection) {
                 }
             }
             return resolve(JSON.stringify(venues));
+        } catch (error) {
+            return reject(error);
+        }
+    });
+}
+
+export async function getVenueShowsJSON(venue: Venue, db: Connection) {
+    // Pull all of the data from the DB
+    return new Promise<string>(async (resolve, reject) => {
+        try {
+            let shows: Show[];
+
+            // Get the shows for the venue
+            shows = await getShows(venue, db);
+
+            // Error if there are no shows
+            if (shows.length === 0) {
+                reject("No shows for venue");
+            }
+
+            // Remove the unneeded data
+            for (let i = 0; i < shows.length; i++) {
+                delete shows[i].id;
+                delete shows[i].defaultPrice;
+                delete shows[i].seats;
+            }
+
+            return resolve(JSON.stringify({ shows: shows }));
         } catch (error) {
             return reject(error);
         }
@@ -236,15 +264,23 @@ export async function getSeatJSON(venue: Venue, show: Show, db: Connection) {
     return new Promise<string>(async (resolve, reject) => {
         try {
             // Get the seats for the show
-            let seats = await getSeats(venue, show, db);
+            let sections = await getSeats(venue, show, db);
 
-            // Remove the unneeded data
-            for (let i = 0; i < seats.length; i++) {
-                delete seats[i].id;
+            // Loop through the sections and remove the unneeded data
+            for (let i = 0; i < sections.length; i++) {
+                delete sections[i].id;
+
+                // Remove the unneeded data
+                // TODO: Add proper check to prevent undefined errors
+                for (let j = 0; j < sections[i].seats.length; j++) {
+                    delete sections[i].seats[j].id;
+                    delete sections[i].seats[j].block?.id;
+                    delete sections[i].seats[j].block?.showID;
+                }
             }
 
             // Return the simplified data
-            return resolve(JSON.stringify(seats));
+            return resolve(JSON.stringify(sections));
         } catch (error) {
             return reject(error);
         }

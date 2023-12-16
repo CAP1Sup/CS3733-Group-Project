@@ -5,9 +5,9 @@ import { getVenuesJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
 interface DeleteVenueRequest {
-    venue: string;
     email: string;
     passwd: string;
+    venue: string;
 }
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

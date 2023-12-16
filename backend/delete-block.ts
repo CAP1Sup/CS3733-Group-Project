@@ -1,16 +1,25 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { getVenuesJSON } from "./libs/db-conv";
-import { activateShow, beginTransaction, getShows, getUser, getVenues, venueExists } from "./libs/db-query";
-import { Show, Venue } from "./libs/db-types";
+import {
+    beginTransaction,
+    getSections,
+    getShows,
+    getUser,
+    getVenues,
+    setSeatBlockToDefault,
+    venueExists,
+} from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
+import { Show, Venue } from "./libs/db-types";
+import { getSeatJSON } from "./libs/db-conv";
 import { Connection } from "mysql2/promise";
 
-interface ActivateShowRequest {
+interface DeleteBlockRequest {
     email: string;
     passwd: string;
     venue: string;
     show: string;
     time: string;
+    name: string;
 }
 
 export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
@@ -26,7 +35,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     }
 
     // Parse the request
-    const request: ActivateShowRequest = JSON.parse(event.body);
+    const request: DeleteBlockRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
     if (
@@ -34,7 +43,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         !request.hasOwnProperty("passwd") ||
         !request.hasOwnProperty("venue") ||
         !request.hasOwnProperty("show") ||
-        !request.hasOwnProperty("time")
+        !request.hasOwnProperty("time") ||
+        !request.hasOwnProperty("name")
     ) {
         return errorResponse("Malformed request, missing required field");
     }
@@ -47,7 +57,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         db = await beginTransaction();
 
         // Get the user's information
-        let user = await getUser(request.email, request.passwd, db);
+        const user = await getUser(request.email, request.passwd, db);
 
         // Check if the user is authorized for the given venue
         let venue: Venue;
@@ -62,6 +72,14 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "You're not authorized to make modifications to that venue";
         }
 
+        // Make sure that the venue has an ID
+        if (!venue.id) {
+            throw "Venue doesn't have an ID";
+        }
+
+        // Get the sections for the venue
+        venue.sections = await getSections(venue.id, db);
+
         // Check if the show exists
         let show: Show;
         venue.shows = await getShows(venue, db);
@@ -73,11 +91,16 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
-        // Attempt to delete the show
-        await activateShow(venue, show, db);
+        // Make sure that the show isn't active
+        if (show.active) {
+            throw "Show is already active";
+        }
 
-        // Get the venues that match the user's info
-        const venueJSON = await getVenuesJSON(user, db);
+        // Set the seats from the block back to the default block
+        await setSeatBlockToDefault(show, request.name, db);
+
+        // Get the active venues
+        const seatJSON = await getSeatJSON(venue, show, db);
 
         // Commit the transaction
         await db.commit();
@@ -85,8 +108,8 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Close the connection
         await db.end();
 
-        // Return the updated list of venues
-        return successResponse(venueJSON);
+        // Return the active venues
+        return successResponse(seatJSON);
     } catch (error) {
         // Rollback the transaction, there was an error
         if (db) {

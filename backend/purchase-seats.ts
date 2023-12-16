@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { beginTransaction, getSections, getShows, getVenues, purchaseSeat } from "./libs/db-query";
+import { beginTransaction, getSections, getShows, getVenues, purchaseSeat, venueExists } from "./libs/db-query";
 import { errorResponse, successResponse } from "./libs/htmlResponses";
 import { Show, Venue } from "./libs/db-types";
 import { getActiveShowsJSON } from "./libs/db-conv";
@@ -28,7 +28,13 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
     const request: PurchaseSeatsRequest = JSON.parse(event.body);
 
     // Make sure that all required fields are present
-    if (!request.venue || !request.show || !request.time || !request.seats || request.seats.length === 0) {
+    if (
+        !request.hasOwnProperty("venue") ||
+        !request.hasOwnProperty("show") ||
+        !request.hasOwnProperty("time") ||
+        !request.hasOwnProperty("seats") ||
+        request.seats.length === 0
+    ) {
         return errorResponse("Malformed request, missing required field");
     }
 
@@ -50,17 +56,21 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
         // Create a new transaction with the DB
         db = await beginTransaction();
 
-        // Create an admin user to get all of the venues
+        // Create an admin user
         // Quick hack to get all of the venues
         const user = { id: 0, email: "", passwd: "", isAdmin: true };
-        const venues = await getVenues(user, db);
 
         // Check if the user's requested venue exists
         let venue: Venue;
-        if (venues.some((venue) => venue.name === request.venue)) {
-            venue = venues.find((venue) => venue.name === request.venue) as Venue;
+        const userVenues = await getVenues(user, db);
+        if (userVenues.some((venue) => venue.name === request.venue)) {
+            venue = userVenues.find((venue) => venue.name === request.venue) as Venue;
         } else {
-            throw "Venue doesn't exist";
+            // User doesn't have access to the venue, find out if the venue exists
+            venueExists(request.venue, db).catch((error) => {
+                throw error;
+            });
+            throw "You're not authorized to make modifications to that venue";
         }
 
         // Make sure that the venue has an ID
@@ -84,6 +94,11 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             throw "Specified show doesn't exist";
         }
 
+        // Make sure that the show is in the future
+        if (show.time.getTime() < Date.now()) {
+            throw "Unable purchase seats for a show that's already happened";
+        }
+
         // Edit each seat to be purchased
         for (let i = 0; i < request.seats.length; i++) {
             // Make sure that the section is between 0 and the number of sections
@@ -101,7 +116,7 @@ export const lambdaHandler = async (event: APIGatewayProxyEvent): Promise<APIGat
             );
         }
 
-        // Get the active venues
+        // Get the active shows
         const activeShowsJSON = await getActiveShowsJSON(db);
 
         // Commit the transaction
