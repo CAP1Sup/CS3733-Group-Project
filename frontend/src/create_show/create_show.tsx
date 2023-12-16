@@ -1,6 +1,6 @@
 import { instance, getInput } from "../main";
 import { getPassword, getUsername } from "../useLogin";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./create_show.css";
 
 export default function CreateShow() {
@@ -48,6 +48,8 @@ export default function CreateShow() {
                 console.log(response);
             })
             .catch((error) => {
+                const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                errorMessage.innerHTML = error;
                 console.log(error);
             });
 
@@ -59,6 +61,8 @@ export default function CreateShow() {
     return (
         <>
             <div>
+                <Link to='/venue-view'><button>Back</button></Link>
+                <div id="error-message" className="error-message"></div>
                 <h1>Create Show:</h1>
                 Date:
                 <input className="date" type="date" id="show-date" />

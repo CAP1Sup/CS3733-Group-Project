@@ -1,61 +1,19 @@
 import { useEffect } from "react";
 import { instance, getInput, getSelect } from "../main";
 import { getPassword, getUsername } from "../useLogin";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function EditShow() {
     const location = useLocation();
-    if(location.state == null){
+    if(location.state == null || location.state.venue == "" || location.state.show == "" || location.state.time == ""){
         return (
             <>
-                <h1>Error: you shouldn't be here. Please select a venue, show and time from the venue viewing page to navigate here properly.</h1>
+                <h1>Error: you shouldn't be here. Please select a venue, show and time from <Link to='/venue-view'>here</Link> to navigate here properly.</h1>
             </>
         )
     }
     let sectionInfos = new Array();
 
-    function createShow() {
-        //TODO: pass info to backend about the show
-        const email = getUsername();
-        const password = getPassword();
-        //const password = createHash('sha256').update((document.getElementById("pwd") as HTMLInputElement).value).digest('hex')
-        const showDate = getInput("show-date");
-        const showTime = getInput("show-time");
-        const combinedDate = new Date(showDate + "T" + showTime);
-        const rawShowPrice = getInput("show-default-price");
-        console.log(location);
-        console.log(location.state);
-        console.log(location.state.venue);
-        let showPrice = 10;
-        if (rawShowPrice != "") {
-            showPrice = parseFloat(rawShowPrice);
-        }
-
-        const showName = getInput("show-name");
-        const venue = location.state.venue;
-
-        const data = {
-            email: email,
-            passwd: password,
-            venue: venue,
-            name: showName,
-            time: combinedDate,
-            defaultPrice: showPrice,
-        };
-
-        instance
-            .post("/create-show", data)
-            .then((response) => {
-                console.log(response);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-
-        //if failure, return error
-
-        //if success, change pages to venue view page
-    }
 
     function createBlock(){
         const email = getUsername();
@@ -63,11 +21,28 @@ export default function EditShow() {
         const blockName = getInput("block-name")
         const blockPrice = getInput("block-price")
         const sectionName = getSelect("section")
-        const startRow = Number(getInput("start-row"))
-        const endRow = Number(getInput("end-row"))
+        const startRow = getInput("start-row")
+        const endRow = getInput("end-row")
+        
+        const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+        if (startRow.length != 1 || startRow.length != 1 || !/^[A-Z]/.test(startRow) || !/^[A-Z]/.test(endRow)){
+            errorMessage.innerHTML = 'Error: inputted row and column must be single letters ranging from A-Z. (caps sensitive)';
+            return;
+        }
+        else if(alphaToRow(startRow) > alphaToRow(endRow)){
+            errorMessage.innerHTML = 'Error: inputted end row comes earlier than the inputted starting row.';
+        }
+        else if(blockName === 'Default'){
+            errorMessage.innerHTML = 'Error: Default is a reserved keyword for block names. Please choose a different block name.';
+        }
+        else if(sectionName === ''){
+            errorMessage.innerHTML = 'Error: Please select a section name.';
+        }
+        errorMessage.innerHTML = '';
+
         const seats = new Array();
         const selectedSectionInfo = sectionInfos.filter((value)=>{return value.name === sectionName})[0]; //TODO
-        for (let i = startRow; i <= endRow; i++){
+        for (let i = alphaToRow(startRow); i <= alphaToRow(endRow); i++){
             for (let j = 0; j < selectedSectionInfo.cols; j++){
                 seats.push({"section":selectedSectionInfo.index, "row":i, "column":j});
             }
@@ -91,6 +66,13 @@ export default function EditShow() {
                 listBlocks();
             })
             .catch((error) => {
+                
+                const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
     }
@@ -116,9 +98,26 @@ export default function EditShow() {
                 listBlocks();
             })
             .catch((error) => {
+                
+                const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
 
+    }
+
+    const rowToAlpha = (row : number) => {
+        const defaultNum = 65;
+        return String.fromCharCode(row+defaultNum);
+    }
+
+    const alphaToRow = (alpha : string) => {
+        const defaultNum = 65;
+        return (alpha.charCodeAt(0) - defaultNum);
     }
 
     function listBlocks(){
@@ -163,10 +162,13 @@ export default function EditShow() {
                                     "price":seat.block.price,
                                     "section":section.name,
                                     "startrow":seat.row,
-                                    "endrow":seat.row});
+                                    "endrow":seat.row,
+                                "totalseats":1,
+                            "purchasedseats":seat.purchased});
                             }
                             else{
-                                uniqueBlockNames[uniqueBlockNames.reduce((arr, e, i) => ((e.blockname === seat.block.name) && arr.push(i), arr), [])]= {...uniqueBlockNames[uniqueBlockNames.reduce((arr, e, i) => ((e.blockname === seat.block.name) && arr.push(i), arr), [])], "endrow":seat.row};
+                                const index = uniqueBlockNames.reduce((arr, e, i) => ((e.blockname === seat.block.name) && arr.push(i), arr), []);
+                                uniqueBlockNames[index] = {...uniqueBlockNames[index], "totalseats":uniqueBlockNames[index].totalseats+1, "purchasedseats":uniqueBlockNames[index].purchasedseats + seat.purchased, "endrow":seat.row};
                             }
                         // }
                     }
@@ -175,38 +177,49 @@ export default function EditShow() {
                 console.log(uniqueBlockNames);
                 const table = document.getElementById('block-listings') as HTMLTableElement;
                 table.innerHTML = "";
-                const newRow = table.insertRow();
-                newRow.insertCell().textContent = "Block Name";
-                newRow.insertCell().textContent = "Price"
-                newRow.insertCell().textContent = "Section"
-                newRow.insertCell().textContent = "Starting Row"
-                newRow.insertCell().textContent = "Ending Row"
+                const headerRow = table.insertRow();
+                headerRow.insertCell().textContent = "Block Name";
+                headerRow.insertCell().textContent = "Price"
+                headerRow.insertCell().textContent = "Section"
+                headerRow.insertCell().textContent = "Starting Row"
+                headerRow.insertCell().textContent = "Ending Row"
+                headerRow.insertCell().textContent = "Seats Purchased"
+                // headerRow.insertCell().textContent = "Seats Purchased"
                 for(const item of uniqueBlockNames){
                     const tempRow = table.insertRow();
                     tempRow.insertCell().textContent = item.blockname;
                     tempRow.insertCell().textContent = item.price;
                     tempRow.insertCell().textContent = item.section;
-                    tempRow.insertCell().textContent = item.startrow;
-                    tempRow.insertCell().textContent = item.endrow;
+                    tempRow.insertCell().textContent = rowToAlpha(item.startrow);
+                    tempRow.insertCell().textContent = rowToAlpha(item.endrow);
+                    tempRow.insertCell().textContent = item.purchasedseats.toString() + "/" + item.totalseats.toString();
                 }
             })
             .catch((error) => {
+                const errorMessage = document.getElementById("error-message") as HTMLDivElement;
+                if (Object.prototype.hasOwnProperty.call(error, "response")) {
+                    errorMessage.innerHTML = error.response.data;
+                } else {
+                    errorMessage.innerHTML = error;
+                }
                 console.log(error);
             });
 
 
     }
     useEffect( () => {
-        // listBlocks();
+        listBlocks();
     }, []);
 
     return (
         <>
             <div>
+                <Link to='/venue-view'><button>Back</button></Link>
+                <div id="error-message" className="error-message"></div>
                 <h1>Edit Show:</h1>
                 <select id="section"/>
-                <input type="number" placeholder="Starting row..." id="start-row"/>
-                <input type="number" placeholder="Ending row..." id="end-row"/>
+                <input type="text" placeholder="Starting row..." id="start-row"/>
+                <input type="text" placeholder="Ending row..." id="end-row"/>
                 
                 Block Name:
                 <input className="blockName" type="text" id="block-name" />

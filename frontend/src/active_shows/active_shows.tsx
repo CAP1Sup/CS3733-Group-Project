@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import "../App.css";
-import { instance, getInput, createOptionsList, getItemName, getSelect, getShowTime } from "../main";
+import { instance, getInput, createOptionsList, getItemName, getSelect, getShowTime, createTimeOptionsList } from "../main";
 import { useEffect } from "react";
 import "./active_shows.css";
 
@@ -16,13 +16,16 @@ export default function ActiveShows() {
         instance.post("/search-shows", data).then((response) => {
             console.log(response);
             const search_results = document.getElementById("search-response") as HTMLDivElement;
-            let results_string = "";
+            search_results.innerHTML = '';
+            const results = document.createElement('ul') as HTMLUListElement;
             for (const v of response.data) {
                 for (const s of v.shows) {
-                    results_string += s.name + "\n";
+                    const y = document.createElement('LI');
+                    y.appendChild(document.createTextNode(s.name.toString()));
+                    results.appendChild(y);
                 }
             }
-            search_results.innerHTML = results_string;
+            search_results.appendChild(results);
         });
     }
 
@@ -78,14 +81,38 @@ export default function ActiveShows() {
                 return item.name === selectedShow;
             });
             console.log(times);
-            const [timeString, timeIndex] = createOptionsList(times, selectedTime, getShowTime);
-            timeMenu.innerHTML = timeString;
+            const [timeString, timeIndex] = createTimeOptionsList(times, selectedTime, getShowTime);
+            timeMenu.innerHTML = timeString as string;
+            for(const option of timeMenu.options){
+                const data = {
+                    venue: selectedVenue,
+                    show: selectedShow,
+                    time: new Date(option.textContent as string)
+                };
+    
+                instance.post("/get-available-seats", data).then((response)=>{
+                   let soldOut = true;
+                   for(const section of response.data){
+                        for(const seat of section.seats){
+                            if(seat.purchased === 0){
+                                soldOut = false;
+                            }
+                        }
+                   } 
+                   if(soldOut && !option.textContent?.endsWith('(SOLD OUT)')){
+                        option.textContent += ' (SOLD OUT)'
+                   }
+                });
+            }
             if (timeIndex === -1) {
                 return;
             }
-            timeMenu.selectedIndex = timeIndex;
+            timeMenu.selectedIndex = timeIndex as number;
             exportShow.time = getSelect("time-list");
             console.log(exportShow);
+
+            //TODO: disable options where the show is already sold out, and indicate that it is sold out
+
             return;
         });
     }

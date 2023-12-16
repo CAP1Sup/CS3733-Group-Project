@@ -43,6 +43,7 @@ export default function Login() {
                 <button
                     className="logoutButton"
                     onClick={(e) => {
+                        e.preventDefault();
                         LogOut();
                         window.location.href = "/";
                     }}

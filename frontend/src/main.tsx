@@ -40,6 +40,20 @@ export function createOptionsList(data: any, selectedItem: string, get: Function
     return [optionString, optionIndex];
 }
 
+export function createTimeOptionsList(data: any, selectedItem: string, get: Function) {
+    let optionsArray = data.map(get) as Array<any>;
+    optionsArray = optionsArray.filter((n: string, i: number) => optionsArray.indexOf(n) === i);
+    let optionString = "";
+    console.log(optionsArray);
+    const displayTimesArray = new Array();
+    for (const option of optionsArray) {
+        displayTimesArray.push((new Date(option)).toString());
+        optionString += "<option>" + (new Date(option)).toString() + "</option>";
+    }
+    const optionIndex = displayTimesArray.indexOf(selectedItem);
+    return [optionString, optionIndex];
+}
+
 export type Show = {
     venue: string;
     show: string;
